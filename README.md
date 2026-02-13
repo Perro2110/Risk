@@ -1,5 +1,6 @@
-# Risko
-Risko - Data science 
+# Risk
+Risk - Data science 
+Chi non riska non roska :D
 
-## see:
+## See:
   - https://refactoring.guru/design-patterns/state
