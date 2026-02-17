@@ -65,7 +65,7 @@ class Game:
         return self.game_map
 
     def play(self):
-        """ Plays the game until the end condition is met (game_length turns) """
+        """ Plays the game until the end condition is met (game_length turns)"""
         # while self.turn < self.game_length:
         #     for player in self.players_list:
         #         self.current_player = player

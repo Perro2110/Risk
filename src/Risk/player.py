@@ -67,7 +67,8 @@ class RedPlayer(Player):
         Stub implementation — always ends the turn.
         To be implemented with a more sophisticated strategy.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+        owned_countries = game_state.get_game_map()\
+                                    .get_owned_countries(self.color)
         return None
 
 
@@ -79,7 +80,8 @@ class PurplePlayer(Player):
         Stub implementation — always ends the turn.
         To be implemented with a more sophisticated strategy.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+        owned_countries = game_state.get_game_map()\
+                                    .get_owned_countries(self.color)
         return None
 
 
@@ -91,7 +93,8 @@ class YellowPlayer(Player):
         Stub implementation — always ends the turn.
         To be implemented with a more sophisticated strategy.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+        owned_countries = game_state.get_game_map()\
+                                    .get_owned_countries(self.color)
         return None
 
 
@@ -103,7 +106,8 @@ class GreenPlayer(Player):
         Stub implementation — always ends the turn.
         To be implemented with a more sophisticated strategy.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+        owned_countries = game_state.get_game_map()\
+                                    .get_owned_countries(self.color)
         return None
 
 
@@ -115,7 +119,8 @@ class BluePlayer(Player):
         Stub implementation — always ends the turn.
         To be implemented with a more sophisticated strategy.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+        owned_countries = game_state.get_game_map()\
+                                    .get_owned_countries(self.color)
         return None
 
 
@@ -136,39 +141,54 @@ class BlackPlayer(Player):
             # Place army phase
             troops = self.troops_to_place
             if troops > 0:
-                owned_countries = game_state.get_game_map().get_owned_countries(self.color)
-                get_number_of_enemy_neighbors = lambda country: country.get_number_of_enemy_neighbors(self.color)
-                country_to_place = max(owned_countries, key=get_number_of_enemy_neighbors)
+                owned_countries = game_state.get_game_map() \
+                                            .get_owned_countries(self.color)
+                get_number_of_enemy_neighbors = lambda country: \
+                               country.get_number_of_enemy_neighbors(self.color)
+                country_to_place = \
+                         max(owned_countries, key=get_number_of_enemy_neighbors)
                 return PlaceArmyAction(country_to_place, troops)
             else:
                 return None
 
         elif game_state.get_phase() == 1:
             # Attack phase
-            owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+            owned_countries = game_state.get_game_map()\
+                                        .get_owned_countries(self.color)
             for country in owned_countries:
                 enemy_neighbors = country.get_enemy_neighbors(self.color)
                 if len(enemy_neighbors) > 0:
                     weakest_enemy_neighbor = min(
-                        enemy_neighbors, key=lambda neighbor: neighbor.get_army_size()
+                        enemy_neighbors, key=lambda neighbor: neighbor\
+                                                                .get_army_size()
                     )
-                    if (country.get_army_size() > weakest_enemy_neighbor.get_army_size()
+                    if (country.get_army_size() > weakest_enemy_neighbor.\
+                                                  get_army_size()
                             and country.get_army_size() > 1):
                         num_armies_to_attack = country.get_army_size() - 1
                         # TODO: handle post-conquest movement
-                        return AttackAction(country, weakest_enemy_neighbor, num_armies_to_attack)
+                        return AttackAction(
+                            country,
+                            weakest_enemy_neighbor,
+                            num_armies_to_attack
+                        )
             return None
 
         elif game_state.get_phase() == 2:
             # Fortify phase
-            owned_countries = game_state.get_game_map().get_owned_countries(self.color)
+            owned_countries = game_state.get_game_map()\
+                                        .get_owned_countries(self.color)
             for country in owned_countries:
                 friendly_neighbors = country.get_friendly_neighbors(self.color)
                 for neighbor in friendly_neighbors:
                     if (neighbor.get_number_of_enemy_neighbors(self.color)
-                            > country.get_number_of_enemy_neighbors(self.color)):
+                        > country.get_number_of_enemy_neighbors(self.color)):
                         num_armies_to_fortify = country.get_army_size() - 1
                         if num_armies_to_fortify > 0:
                             # TODO: verify movement logic
-                            return FortifyAction(country, neighbor, num_armies_to_fortify)
+                            return FortifyAction(
+                                country,
+                                neighbor,
+                                num_armies_to_fortify
+                            )
             return None

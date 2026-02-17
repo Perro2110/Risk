@@ -128,7 +128,7 @@ class AttackAction(Action):
         )
 
         # Compare rolls and determine outcome
-        for attacker_roll, defender_roll in zip(attackers_rolls, defenders_rolls):
+        for attacker_roll,defender_roll in zip(attackers_rolls,defenders_rolls):
             if attacker_roll > defender_roll:
                 # Attacker wins, defender loses an army
                 self.to_country.set_army_size(
