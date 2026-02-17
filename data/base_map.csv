@@ -1,0 +1,43 @@
+country,continent,continent_reward,neighbors
+Alaska,North America,5,Kamchatka;Northwest Territory;Alberta
+Northwest Territory,North America,5,Alaska;Alberta;Ontario;Greenland
+Alberta,North America,5,Alaska;Northwest Territory;Ontario;Western United States
+Ontario,North America,5,Northwest Territory;Alberta;Western United States;Eastern United States;Quebec
+Quebec,North America,5,Ontario;Eastern United States;Greenland
+Western United States,North America,5,Alberta;Ontario;Eastern United States;Central America
+Eastern United States,North America,5,Ontario;Quebec;Western United States;Central America
+Central America,North America,5,Western United States;Eastern United States;Venezuela
+Greenland,North America,5,Northwest Territory;Quebec;Iceland
+Venezuela,South America,2,Central America;Peru;Brazil
+Peru,South America,2,Venezuela;Brazil;Argentina
+Brazil,South America,2,Venezuela;Peru;Argentina;North Africa
+Argentina,South America,2,Peru;Brazil
+Iceland,Europe,5,Greenland;Great Britain;Scandinavia
+Great Britain,Europe,5,Iceland;Scandinavia;Northern Europe;Western Europe
+Scandinavia,Europe,5,Iceland;Great Britain;Northern Europe;Ukraine
+Northern Europe,Europe,5,Great Britain;Scandinavia;Western Europe;Southern Europe;Ukraine
+Western Europe,Europe,5,Great Britain;Northern Europe;Southern Europe;North Africa
+Southern Europe,Europe,5,Northern Europe;Western Europe;Ukraine;Egypt;North Africa
+Ukraine,Europe,5,Scandinavia;Northern Europe;Southern Europe;Ural;Afghanistan;Middle East
+North Africa,Africa,3,Western Europe;Southern Europe;Egypt;East Africa;Brazil;Congo
+Egypt,Africa,3,Southern Europe;North Africa;East Africa;Middle East
+East Africa,Africa,3,North Africa;Egypt;Madagascar;South Africa;Middle East;Congo
+Madagascar,Africa,3,East Africa;South Africa
+South Africa,Africa,3,East Africa;Madagascar;Congo
+Congo,Africa,3,North Africa;East Africa;South Africa
+Ural,Asia,7,Ukraine;Siberia;China;Afghanistan
+Siberia,Asia,7,Ural;Yakutsk;Irkutsk;Mongolia;China
+Yakutsk,Asia,7,Siberia;Irkutsk;Kamchatka
+Irkutsk,Asia,7,Siberia;Yakutsk;Mongolia;Kamchatka
+Kamchatka,Asia,7,Alaska;Yakutsk;Irkutsk;Mongolia;Japan
+Mongolia,Asia,7,Siberia;Irkutsk;Kamchatka;Japan;China
+Japan,Asia,7,Kamchatka;Mongolia
+Afghanistan,Asia,7,Ukraine;Ural;China;India;Middle East
+China,Asia,7,Ural;Siberia;Mongolia;Afghanistan;India;Siam
+India,Asia,7,Afghanistan;China;Siam;Middle East
+Siam,Asia,7,China;India;Indonesia
+Middle East,Asia,7,Ukraine;Southern Europe;Egypt;East Africa;Afghanistan;India
+Indonesia,Australia,2,Siam;New Guinea;Western Australia
+New Guinea,Australia,2,Indonesia;Western Australia;Eastern Australia
+Western Australia,Australia,2,Indonesia;New Guinea;Eastern Australia
+Eastern Australia,Australia,2,New Guinea;Western Australia
