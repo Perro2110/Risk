@@ -40,11 +40,11 @@ class FortifyAction(Action):
     """ Move army action class """
 
     def __init__(
-            self,
-            from_country: Country,
-            to_country: Country,
-            num_armies: int = 0
-        ):
+                self,
+                from_country: Country,
+                to_country: Country,
+                num_armies: int = 0
+            ):
         self.from_country = from_country
         self.to_country = to_country
         self.num_armies = num_armies
@@ -65,12 +65,12 @@ class MoveAction(FortifyAction):
     """
 
     def __init__(
-            self,
-            from_country: Country,
-            to_country: Country,
-            num_armies: int = 0,
-            army_want_to_move: int = 0
-        ):
+                self,
+                from_country: Country,
+                to_country: Country,
+                num_armies: int = 0,
+                army_want_to_move: int = 0
+            ):
         super().__init__(from_country, to_country, num_armies)
         self.army_want_to_move = army_want_to_move
 
@@ -98,12 +98,12 @@ class AttackAction(Action):
     """
 
     def __init__(
-            self,
-            from_country: Country,
-            to_country: Country,
-            num_armies: int = 0,
-            army_want_to_move: int = 0,
-        ):
+                self,
+                from_country: Country,
+                to_country: Country,
+                num_armies: int = 0,
+                army_want_to_move: int = 0,
+            ):
         self.army_want_to_move = army_want_to_move
         self.from_country = from_country
         self.to_country = to_country
@@ -118,17 +118,17 @@ class AttackAction(Action):
         num_defenders = min(3, self.to_country.get_army_size())
 
         # Classic Risk attack rules — roll dice for attackers and defenders
-        attackers_rolls = sorted(
+        attack_rolls = sorted(
             [random.randint(1, 6) for _ in range(num_attackers)],
             reverse=True
         )
-        defenders_rolls = sorted(
+        defence_rolls = sorted(
             [random.randint(1, 6) for _ in range(num_defenders)],
             reverse=True
         )
 
         # Compare rolls and determine outcome
-        for attacker_roll, defender_roll in zip(attackers_rolls, defenders_rolls):
+        for attacker_roll, defender_roll in zip(attack_rolls, defence_rolls):
             if attacker_roll > defender_roll:
                 # Attacker wins, defender loses an army
                 self.to_country.set_army_size(

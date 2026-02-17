@@ -2,6 +2,7 @@ from __future__ import annotations
 from multipledispatch import dispatch
 import csv
 
+
 class Country:
     """
     Risk game country class.
@@ -10,40 +11,40 @@ class Country:
     """
 
     def __init__(
-            self,
-            name: str,
-            owner: str,
-            army_size: int,
-            neighbors: list[Country],
-        ):
+                self,
+                name: str,
+                owner: str,
+                army_size: int,
+                neighbors: list[Country],
+            ):
         self.owner = owner
         self.name = name
         self.army_size = army_size
         self.neighbors = neighbors
 
     # getter and setter for name
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
     def set_name(self, name):
         self.name = name
 
     # getter and setter for owner
-    def get_owner(self):
+    def get_owner(self) -> str:
         return self.owner
 
     def set_owner(self, owner):
         self.owner = owner
 
     # getter and setter for army_size
-    def get_army_size(self):
+    def get_army_size(self) -> int:
         return self.army_size
 
     def set_army_size(self, army_size):
         self.army_size = army_size
 
     # getter and setter for neighbors
-    def get_neighbors(self):
+    def get_neighbors(self) -> list[Country]:
         return self.neighbors
 
     def set_neighbors(self, neighbors):
@@ -57,15 +58,15 @@ class Country:
         """ Adds a neighbor to the country """
         self.neighbors.append(neighbor)
 
-    def is_neighbor(self, country):
+    def is_neighbor(self, country) -> bool:
         """ Returns true if the country is a neighbor of the country """
         return country in self.neighbors
 
-    def is_controlled_by(self, player):
+    def is_controlled_by(self, player) -> bool:
         """ Returns true if the country is controlled by the player """
         return self.owner == player
 
-    def get_enemy_neighbors(self, player):
+    def get_enemy_neighbors(self, player) -> list[Country]:
         """ Returns the list of enemy neighbors of the country """
         enemy_neighbors = []
         for neighbor in self.neighbors:
@@ -73,11 +74,12 @@ class Country:
                 enemy_neighbors.append(neighbor)
         return enemy_neighbors
 
-    def get_number_of_enemy_neighbors(self, player):
+    def get_number_of_enemy_neighbors(self, player: str = "") -> int:
         """ Returns the number of enemy neighbors of the country """
+        player = player if player else self.get_owner()
         return len(self.get_enemy_neighbors(player))
 
-    def get_friendly_neighbors(self, player):
+    def get_friendly_neighbors(self, player) -> list[Country]:
         """ Returns the list of friendly neighbors of the country """
         friendly_neighbors = []
         for neighbor in self.neighbors:
@@ -85,7 +87,7 @@ class Country:
                 friendly_neighbors.append(neighbor)
         return friendly_neighbors
 
-    def get_number_of_friendly_neighbors(self, player):
+    def get_number_of_friendly_neighbors(self, player) -> int:
         """ Returns the number of friendly neighbors of the country """
         return len(self.get_friendly_neighbors(player))
 
@@ -113,7 +115,7 @@ class Continent:
 
     # getter and setter for reward
     @dispatch()
-    def get_reward(self): # type: ignore (this removes warning)
+    def get_reward(self):  # type: ignore (this removes warning)
         return self.reward
 
     def set_reward(self, reward):
@@ -164,7 +166,7 @@ class Map:
     #####################################
     # utility functions
     #####################################
-    def get_reward(self, player):
+    def get_reward(self, player) -> int:
         """ Returns the total army reward for the player """
         reward = 0
         for continent in self.continents:
@@ -172,7 +174,7 @@ class Map:
         reward += self.get_num_countries(player) // 3
         return reward
 
-    def get_num_countries(self, player):
+    def get_num_countries(self, player) -> int:
         """ Returns the number of countries controlled by the player """
         num_countries = 0
         for continent in self.continents:
@@ -181,13 +183,13 @@ class Map:
                     num_countries += 1
         return num_countries
 
-    def get_owned_countries(self, player):
+    def get_owned_countries(self, player) -> list[Country]:
         """ Returns all countries on the map controlled by the player """
         owned = []
         for continent in self.continents:
             owned.extend(continent.get_owned_countries(player))
         return owned
-    
+
     #####################################
     # class methods
     #####################################

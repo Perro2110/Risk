@@ -1,15 +1,16 @@
 from Risk.map import Map
 
+
 class GameState:
     """ Game state class """
 
     def __init__(
-            self,
-            game_map: Map,
-            players: list[str],
-            current_player_index: int = 0,
-            phase: int = 0
-        ):
+                self,
+                game_map: Map,
+                players: list[str],
+                current_player_index: int = 0,
+                phase: int = 0
+            ):
         self.game_map = game_map
         self.players = players
         self.current_player_index = 0
@@ -65,7 +66,7 @@ class Game:
         return self.game_map
 
     def play(self):
-        """ Plays the game until the end condition is met (game_length turns) """
+        """ Plays the game until the end condition is met """
         # while self.turn < self.game_length:
         #     for player in self.players_list:
         #         self.current_player = player
