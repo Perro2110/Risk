@@ -4,6 +4,15 @@ from Risk.map import Map
 class GameState:
     """ Game state class """
 
+    PLACE_ARMY: int = 0
+    """ First phase of the turn, evaluates to 0 """
+
+    ATTACK: int = 1
+    """ Second phase of the turn, evaluates to 1 """
+
+    FORTIFY: int = 2
+    """ Third phase of the turn, evaluates to 2 """
+
     def __init__(
                 self,
                 game_map: Map,

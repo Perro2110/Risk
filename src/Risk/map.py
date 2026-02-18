@@ -91,6 +91,25 @@ class Country:
         """ Returns the number of friendly neighbors of the country """
         return len(self.get_friendly_neighbors(player))
 
+    def get_connected_friendly_countries(self) -> list[Country]:
+        """
+            Returns all friendly countries connected to this country
+        """
+        owner = self.get_owner()
+        visited = set()
+        queue: list[Country] = [self]
+
+        while queue:
+            current = queue.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            for neighbor in current.get_friendly_neighbors(owner):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+
+        return [c for c in list(visited) if c is not self]
+
     def __str__(self):
         return self.name
 
@@ -249,4 +268,7 @@ class Map:
         return cls(continents)
 
     def __str__(self) -> str:
-        return f'{[f'{c.get_name()} : {c.get_owner()} {c.get_army_size()} \n' for c in self.get_countries()]}'
+        return f'{
+                [f'{c.get_name()} : {c.get_owner()} {c.get_army_size()} \n'
+                    for c in self.get_countries()]
+                }'
