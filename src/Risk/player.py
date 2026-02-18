@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from Risk.actions import Action, PlaceArmyAction, AttackAction, FortifyAction
-from Risk.game import GameState
+from Risk.game_state import GameState
 from Risk import utils
 
 

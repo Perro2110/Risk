@@ -1,5 +1,5 @@
 from Risk.map import Country
-from Risk.game import GameState
+from Risk.game_state import GameState
 
 
 def get_most_contested_country(game_state: GameState, player: str) \
