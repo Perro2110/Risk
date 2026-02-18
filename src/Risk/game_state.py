@@ -35,3 +35,11 @@ class GameState:
 
     def next_phase(self):
         self.phase = (self.phase + 1) % 3
+
+    def __str__(self):
+        phases = ['place army', 'attack', 'fortify']
+        return f'\
+            current_player : {self.players[self.current_player_index]} \n \
+            phase: {phases[self.phase]} \n \
+            game_map: {self.game_map} \n \
+        '

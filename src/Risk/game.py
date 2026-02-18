@@ -1,5 +1,7 @@
+import random
 from Risk.map import Map
 from Risk.player import Player
+from Risk.game_state import GameState
 
 
 class Game:
@@ -10,7 +12,7 @@ class Game:
     def __init__(self, game_length: int = 100, game_map: Map | None = None):
         self.game_length = game_length  # number of turns before the game ends
         self.game_map = game_map
-        self.players_list = []
+        self.players_list : list[Player] = []
         self.current_player = None
         self.turn = 0
 
@@ -36,13 +38,54 @@ class Game:
     def get_map(self) -> Map | None:
         """ Gets the game map """
         return self.game_map
+    
+    def get_game_map(self) -> GameState | None:
+        """ Gets the game map """
+        return self.game
+    
+    def init_game_state(self) -> None:
+        self.game_state = GameState(
+            self.game_map,
+            [p.color for p in self.players_list]
+        )
+
+        num_player = len(self.players_list)
+        num_starting_army = 50 - (5 * num_player) 
+        starting_army = [num_starting_army] * num_player
+        
+        # Randomly assign each country to a player
+        countries_to_assign = self.get_map().get_countries()
+        random.shuffle(countries_to_assign)
+        while len(countries_to_assign) > 0:
+            for i in range(min(num_player, len(countries_to_assign))):
+                c = countries_to_assign.pop()
+                c.set_owner(self.players_list[i].color)
+                c.set_army_size(1)
+                starting_army[i] -= 1
+
+        i = 0
+        for player in self.players_list:
+            player.set_troops_to_place(starting_army[i])
+            action = player.choose_action(self.game_state)
+            if action is not None:
+                action.execute()
+            
+            i += 1
+        
 
     def play(self):
+        print('Initializing game state: ')
+        self.init_game_state()
+        print('Initial game state: ')
+        print(self.game_state)
+
+        print('Game starting: ')
         """ Plays the game until the end condition is met """
         while self.turn < self.game_length:
+            print(f'Turn: {self.turn}')
             for player in self.players_list:
                 self.current_player = player
-                action = player.choose_action(self.get_game_state())
-                if action is not None:
-                    action.execute()
+                print(f'player: {self.current_player.color}')
+                player.play_turn(self.game_state)
+                self.game_state.next_player()
             self.turn += 1

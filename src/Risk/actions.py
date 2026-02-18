@@ -31,6 +31,7 @@ class PlaceArmyAction(Action):
 
     def execute(self):
         """ Executes the action """
+        print("Piazzo pezzi di merda!")
         self.country.set_army_size(
             self.country.get_army_size() + self.num_armies
         )
@@ -51,6 +52,7 @@ class FortifyAction(Action):
 
     def execute(self):
         """ Executes the action """
+        print("Fortifico merdacce!")
         self.from_country.set_army_size(
             self.from_country.get_army_size() - self.num_armies)
         self.to_country.set_army_size(
@@ -99,20 +101,23 @@ class AttackAction(Action):
             [random.randint(1, 6) for _ in range(num_defenders)],
             reverse=True
         )
-
+        print("Attacco gli sterchi fumanti!")
         # Compare rolls and determine outcome
         for attacker_roll, defender_roll in zip(attack_rolls, defence_rolls):
             if attacker_roll > defender_roll:
                 # Attacker wins, defender loses an army
+                print("Ora sta merda ha perso hahahahaha")
                 self.to_country.set_army_size(
                     self.to_country.get_army_size() - 1)
             else:
                 # Defender wins, attacker loses an army
+                print("Oh cazzo sono nella merda!")
                 self.from_country.set_army_size(
                     self.from_country.get_army_size() - 1)
 
         # If the attacker conquered the to_country, move armies in
         if self.to_country.get_army_size() == 0:
+            print("Mettiamo le merdine a casa della merda!")
             fortify_action = FortifyAction(
                 self.from_country,
                 self.to_country,

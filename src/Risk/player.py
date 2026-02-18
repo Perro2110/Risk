@@ -23,8 +23,9 @@ from Risk import utils
 class Player(ABC):
     """ Player base class """
 
-    def __init__(self, color: str):
+    def __init__(self, color: str, troops_to_place: int = 0):
         self.color = color
+        self.troops_to_place = troops_to_place
 
     @abstractmethod
     def choose_action(self, game_state: GameState) -> Action | None:
@@ -34,6 +35,9 @@ class Player(ABC):
         their turn (by returning None).
         """
         pass
+
+    def set_troops_to_place(self, troops_to_place: int):
+        self.troops_to_place = troops_to_place
 
     def __str__(self) -> str:
         return self.__class__.__name__
@@ -57,7 +61,7 @@ class Player(ABC):
             else:
                 game_state.next_phase()
                 if game_state.get_phase() == 0:
-                    break
+                    return
 
 
 class RedPlayer(Player):
@@ -133,6 +137,7 @@ class BlackPlayer(Player):
     def choose_action(self, game_state: GameState) -> Action | None:
         if game_state.get_phase() == 0:
             # Place army phase
+            troops = self.troops_to_place
             if self.troops_to_place == 0:
                 return None
 
@@ -144,6 +149,7 @@ class BlackPlayer(Player):
             if country_to_place is None:
                 return None
 
+            self.troops_to_place -= troops
             return PlaceArmyAction(country_to_place, self.troops_to_place)
 
         elif game_state.get_phase() == 1:
@@ -191,7 +197,6 @@ class BlackPlayer(Player):
                         country_to_place.get_number_of_enemy_neighbors() \
                         > country.get_number_of_enemy_neighbors():
                     num_armies_to_fortify = country.get_army_size() - 1
-
                     return FortifyAction(
                         country,
                         country_to_place,

@@ -173,6 +173,14 @@ class Map:
             reward += continent.get_reward(player)
         reward += self.get_num_countries(player) // 3
         return reward
+    
+    def get_countries(self) -> list[Country]:
+        """ Returns all the countries """
+        countries = []
+        for continent in self.continents:
+            for country in continent.get_countries():
+                countries.append(country)
+        return countries
 
     def get_num_countries(self, player) -> int:
         """ Returns the number of countries controlled by the player """
@@ -239,3 +247,6 @@ class Map:
 
         # This creates and returns a Map with relative Contients and Countries
         return cls(continents)
+
+    def __str__(self) -> str:
+        return f'{[f'{c.get_name()} : {c.get_owner()} {c.get_army_size()} \n' for c in self.get_countries()]}'
