@@ -123,6 +123,9 @@ class BlackPlayer(Player):
     - Place phase: puts all armies on the country with the most enemy neighbors
     - Attack phase: every owned country attacks its weakest enemy neighbor,
       but only if the attacker has more armies than the target and more than 1.
+      If it takes a country all armies will be moved to the country which has 
+      the most enemy neighbors.
+
     - Fortify phase: moves armies from countries with fewer enemy neighbors
       to neighboring friendly countries that face more enemies.
     """
@@ -149,19 +152,29 @@ class BlackPlayer(Player):
                 .get_owned_countries(self.color)
 
             for country in owned_countries:
-                weakest_en = utils.weakest_enemy_neighbour(
-                    country
-                )
+                weakest_en = utils.weakest_enemy_neighbour(country)
 
                 if weakest_en is not None and \
                         country.get_army_size() > weakest_en.get_army_size() \
                         and country.get_army_size() > 1:
 
-                    num_armies_to_attack = country.get_army_size() - 1
+                    num_armies_to_attack = min(3, country.get_army_size() - 1)
+                    
+                    num_armies_want_to_move_post_attack = (
+                            country.get_army_size() - 1 - num_armies_to_attack
+                    )
+
+                    if country.get_number_of_enemy_neighbors() - 1 \
+                            > weakest_en.get_number_of_enemy_neighbors(
+                                self.color
+                            ):
+                        num_armies_want_to_move_post_attack = 0
+
                     return AttackAction(
                         country,
                         weakest_en,
-                        num_armies_to_attack
+                        num_armies_to_attack,
+                        num_armies_want_to_move_post_attack
                     )
 
             return None

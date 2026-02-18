@@ -56,33 +56,6 @@ class FortifyAction(Action):
         self.to_country.set_army_size(
             self.to_country.get_army_size() + self.num_armies)
 
-
-class MoveAction(FortifyAction):
-    """
-    Fortify action class — extends FortifyAction, but is executed in the
-    fortify phase and the player can choose how many armies to move from
-    one country to another.
-    """
-
-    def __init__(
-                self,
-                from_country: Country,
-                to_country: Country,
-                num_armies: int = 0,
-                army_want_to_move: int = 0
-            ):
-        super().__init__(from_country, to_country, num_armies)
-        self.army_want_to_move = army_want_to_move
-
-    def execute(self):
-        """ Executes the action """
-        num_armies_to_move = self.army_want_to_move
-        self.from_country.set_army_size(
-            self.from_country.get_army_size() - num_armies_to_move)
-        self.to_country.set_army_size(
-            self.to_country.get_army_size() + num_armies_to_move)
-
-
 class AttackAction(Action):
     """
     Attack action class.
@@ -140,10 +113,10 @@ class AttackAction(Action):
 
         # If the attacker conquered the to_country, move armies in
         if self.to_country.get_army_size() == 0:
-            fortify_action = MoveAction(
+            fortify_action = FortifyAction(
                 self.from_country,
                 self.to_country,
-                num_attackers,
-                army_want_to_move=self.num_armies
+                # we move army want to move and num army survived 
+                (self.army_want_to_move + self.num_armies) 
             )
             fortify_action.execute()
