@@ -556,7 +556,7 @@ class RiskVisualizer:
             active = (i == cur)
             ax.add_patch(FancyBboxPatch(
                 (x, 0.12), pill_w, 0.76,
-                boxstyle="pad=0.02",
+                boxstyle="round,pad=0.02",
                 facecolor=col if active else col + "18",
                 edgecolor=col,
                 linewidth=1.8 if active else 0.8,
