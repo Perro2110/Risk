@@ -16,4 +16,5 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "multipledispatch>=1.0",
+    "matplotlib"
 ]

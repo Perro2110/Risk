@@ -2,12 +2,13 @@ import random
 from Risk.map import Map
 from Risk.player import Player
 from Risk.game_state import GameState
+from Risk.visualizer import RiskVisualizer
 
 
 class Game:
     """ Game class of Risk """
 
-    def __init__(self, game_length: int = 100, game_map: Map | None = None):
+    def __init__(self, game_map: Map, game_length: int = 100):
         self.game_length = game_length  # number of turns before the game ends
         self.game_map = game_map
         self.players_list: list[Player] = []
@@ -25,7 +26,7 @@ class Game:
         """ Sets the game map """
         self.game_map = game_map
 
-    def get_map(self) -> Map | None:
+    def get_map(self) -> Map:
         """ Gets the game map """
         return self.game_map
 
@@ -34,9 +35,6 @@ class Game:
         return self.game_state
 
     def init_game_state(self) -> None:
-        if self.game_map is None:
-            return
-
         self.game_state = GameState(
             self.game_map,
             [p.color for p in self.players_list]
@@ -78,12 +76,26 @@ class Game:
         print(self.game_state)
 
         print('Game starting: ')
+        random.seed()
+
+        viz = RiskVisualizer(self.get_game_state())  # type: ignore
+
         """ Plays the game until the end condition is met """
         while self.turn < self.game_length:
             print(f'Turn: {self.turn}')
             for player in self.players_list:
                 self.current_player = player
+                player.set_completed_phase([])
                 print(f'player: {self.current_player.color}')
-                player.play_turn(self.get_game_state())
-                self.game_state.next_player()
+                player.play_turn(self.get_game_state(), viz)  # type: ignore
+                self.game_state.next_player()  # type: ignore
+
             self.turn += 1
+
+        viz.show()
+
+        print('Final game state: ')
+        for player in self.players_list:
+            print(f"player {player.color} owns \
+                {len(self.get_map().get_owned_countries(player.color))} \
+            ")

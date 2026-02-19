@@ -4,16 +4,12 @@ from Risk.player import BlackPlayer
 
 game_map = Map.from_csv('data/base_map.csv')
 
-game = Game(100, game_map)
+game = Game(game_map, 5)
 
-p1 = BlackPlayer("b")
-p2 = BlackPlayer("c")
+p1 = BlackPlayer("black")
+p2 = BlackPlayer("nero")
+p3 = BlackPlayer("el primo")
 
-
-game.set_players([p1,p2])
-
-assert game_map is game.get_map()
-
+game.set_players([p1, p2, p3])
 
 game.play()
-

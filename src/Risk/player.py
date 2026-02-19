@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from Risk.actions import Action, PlaceArmyAction, AttackAction, FortifyAction
 from Risk.game_state import GameState
 from Risk import utils
+from matplotlib import pyplot as plt
 
 
 ###############################################################################
@@ -60,6 +61,10 @@ class Player(ABC):
         """Mark a phase as completed so it won't be re-entered this turn."""
         self.completed_phases.append(phase)
 
+    def set_completed_phase(self, phases: list = []):
+        """Mark a phase as completed so it won't be re-entered this turn."""
+        self.completed_phases = phases
+
     def set_troops_to_place(self, troops_to_place: int):
         """Override the number of troops available to place."""
         self.troops_to_place = troops_to_place
@@ -83,7 +88,7 @@ class Player(ABC):
     # maybe we want to put it in the Game class and call it from the Player   #
     # class but for now we put it here for simplicity                         #
     ###########################################################################
-    def play_turn(self, game_state: GameState):
+    def play_turn(self, game_state: GameState, visualizer=None):
         """
         Drive a full turn: place armies → attack → fortify.
 
@@ -94,8 +99,13 @@ class Player(ABC):
         self.troops_to_place = game_state.get_game_map().get_reward(self.color)
         while True:
             action = self.choose_action(game_state)
+
             if action is not None:
                 action.execute()
+                if visualizer is not None:
+                    visualizer.show(False)
+                    visualizer.update(game_state)
+                    plt.pause(0.1)
             else:
                 game_state.next_phase()
                 if game_state.get_phase() == 0:
@@ -168,7 +178,7 @@ class BlackPlayer(Player):
 
         self.troops_to_place -= troops
         self.add_completed_phase(GameState.PLACE_ARMY)
-        return PlaceArmyAction(country_to_place, self.troops_to_place)
+        return PlaceArmyAction(country_to_place, troops)
 
     def __handle_attack_phase(self, game_state: GameState) -> Action | None:
         """
@@ -226,15 +236,15 @@ class BlackPlayer(Player):
             reverse=True
         )
 
-        for from_country in sorted_countries:
-            if not from_country.get_neighbors():
+        for to_country in sorted_countries:
+            if not to_country.get_neighbors():
                 continue
 
-            for to_country in from_country.get_connected_friendly_countries():
-                if to_country.get_army_size() <= 1:
+            for from_country in to_country.get_connected_friendly_countries():
+                if from_country.get_army_size() <= 1:
                     continue
 
-                num_armies_to_move = to_country.get_army_size() - 1
+                num_armies_to_move = from_country.get_army_size() - 1
                 self.add_completed_phase(GameState.FORTIFY)
                 return FortifyAction(from_country,
                                      to_country,

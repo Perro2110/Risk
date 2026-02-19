@@ -31,7 +31,7 @@ class PlaceArmyAction(Action):
 
     def execute(self):
         """ Executes the action """
-        print("Piazzo pezzi di merda!")
+        print(f"Placing {self.num_armies} troops at {self.country.name}")
         self.country.set_army_size(
             self.country.get_army_size() + self.num_armies
         )
@@ -52,11 +52,18 @@ class FortifyAction(Action):
 
     def execute(self):
         """ Executes the action """
-        print("Fortifico merdacce!")
+
+        print(f"player {self.from_country.get_owner()} \
+              (country {self.from_country.get_name()} \
+              {self.from_country.get_army_size()}) \
+              is placing {self.num_armies} troops in country \
+              {self.to_country.get_name()} {self.to_country.get_army_size()}!")
+        
         self.from_country.set_army_size(
             self.from_country.get_army_size() - self.num_armies)
         self.to_country.set_army_size(
             self.to_country.get_army_size() + self.num_armies)
+
 
 class AttackAction(Action):
     """
@@ -101,27 +108,33 @@ class AttackAction(Action):
             [random.randint(1, 6) for _ in range(num_defenders)],
             reverse=True
         )
-        print("Attacco gli sterchi fumanti!")
+
+        print(f"player {self.from_country.get_owner()} \
+                (country {self.from_country.get_name()} {num_attackers} \
+                out of {self.from_country.get_army_size()}) \
+                is attacking player {self.to_country.get_owner()} \
+                (country {self.to_country.get_name()} {num_defenders} \
+                out of {self.to_country.get_army_size()})!")
+
         # Compare rolls and determine outcome
         for attacker_roll, defender_roll in zip(attack_rolls, defence_rolls):
             if attacker_roll > defender_roll:
                 # Attacker wins, defender loses an army
-                print("Ora sta merda ha perso hahahahaha")
                 self.to_country.set_army_size(
                     self.to_country.get_army_size() - 1)
             else:
                 # Defender wins, attacker loses an army
-                print("Oh cazzo sono nella merda!")
                 self.from_country.set_army_size(
                     self.from_country.get_army_size() - 1)
 
         # If the attacker conquered the to_country, move armies in
         if self.to_country.get_army_size() == 0:
-            print("Mettiamo le merdine a casa della merda!")
+            print("Attacking player won")
+            self.to_country.set_owner(self.from_country.get_owner())
             fortify_action = FortifyAction(
                 self.from_country,
                 self.to_country,
-                # we move army want to move and num army survived 
-                (self.army_want_to_move + self.num_armies) 
+                # we move army want to move and num army survived
+                (self.army_want_to_move + self.num_armies)
             )
             fortify_action.execute()
