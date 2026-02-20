@@ -16,12 +16,11 @@ class GameState:
     def __init__(
                 self,
                 game_map: Map,
-                players: list[str],
-                current_player_index: int = 0,
-                phase: int = 0
+                players: list[object],
             ):
         self.game_map = game_map
-        self.players = players
+        self.players = {player.color: player for player in players}
+        self.player_names = [player.color for player in players]
         self.current_player_index = 0
         self.phase = 0  # 0: place army, 1: attack, 2: fortify
 
@@ -29,7 +28,10 @@ class GameState:
         return self.game_map
 
     def get_current_player(self):
-        return self.players[self.current_player_index]
+        return self.players[self.player_names[self.current_player_index]]
+
+    def get_alive_players(self):
+        return [p for p in self.players.values() if not p.is_dead]
 
     def next_player(self):
         self.current_player_index = (
@@ -48,7 +50,9 @@ class GameState:
     def __str__(self):
         phases = ['place army', 'attack', 'fortify']
         return f'\
-            current_player : {self.players[self.current_player_index]} \n \
+            current_player : {self.players[self.player_names[
+                self.current_player_index
+            ]]} \n \
             phase: {phases[self.phase]} \n \
             game_map: {self.game_map} \n \
         '

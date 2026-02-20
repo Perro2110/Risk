@@ -339,7 +339,7 @@ class RiskVisualizer:
 
         colour_map: dict[str, str] = {
             p: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
-            for i, p in enumerate(gs.players)
+            for i, p in enumerate(gs.player_names)
         }
         gs_countries = {
             c.get_name(): c for c in gs.get_game_map().get_countries()
@@ -369,10 +369,14 @@ class RiskVisualizer:
 
         for name, (x, y) in TERRITORY_POS.items():
             c = gs_countries.get(name)
-            owner = c.get_owner() if c else ""
+
+            if c is None:
+                continue
+
+            owner = c.get_owner()
             armies = c.get_army_size() if c else 0
 
-            fill = colour_map.get(owner, NEUTRAL_COLOUR)
+            fill = colour_map.get(owner.color, NEUTRAL_COLOUR)
             is_active = (owner == current_player and owner != "")
 
             # gold glow ring for current-player territories
@@ -417,9 +421,9 @@ class RiskVisualizer:
         ax.set_ylim(0, 1)
 
         game_map = gs.get_game_map()
-        players = gs.players
+        players = gs.players.values()
         colour_map = {
-            p: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
+            p.color: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
             for i, p in enumerate(players)
         }
         total = len(game_map.get_countries())
@@ -436,7 +440,7 @@ class RiskVisualizer:
 
         for i, player in enumerate(players):
             y_top = 0.935 - i * (card_h + gap)
-            col = colour_map[player]
+            col = colour_map[player.color]
             owned = game_map.get_owned_countries(player)
             n_c = len(owned)
             n_a = sum(c.get_army_size() for c in owned)
@@ -543,9 +547,11 @@ class RiskVisualizer:
         ]
         cur = gs.get_phase()
         player = gs.get_current_player()
-        p_col = PLAYER_COLOURS[gs.players.index(player) % len(PLAYER_COLOURS)]
+        p_col = PLAYER_COLOURS[
+            gs.player_names.index(player.color) % len(PLAYER_COLOURS)
+        ]
 
-        ax.text(0.01, 0.5, f"  TURN ▶  {player}",
+        ax.text(0.01, 0.5, f"  TURN ▶  {player.color}",
                 color=p_col, va="center",
                 fontsize=10, fontweight="bold",
                 transform=ax.transAxes)

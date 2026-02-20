@@ -4,7 +4,7 @@ players.py — Player classes for the Risk game engine.
 Each player subclass implements a distinct strategy via `choose_action`.
 The base `Player` class handles turn flow (place → attack → fortify phases).
 """
-
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from Risk.actions import Action, PlaceArmyAction, AttackAction, FortifyAction
 from Risk.game_state import GameState
@@ -44,6 +44,8 @@ class Player(ABC):
 
     def __init__(self, color: str, troops_to_place: int = 0):
         self.color = color
+        self.strategy = None
+        self.is_dead = False
         self.troops_to_place = troops_to_place
         self.completed_phases: list[int] = []
 
@@ -77,7 +79,7 @@ class Player(ABC):
             phase not in self.completed_phases
 
     def __str__(self) -> str:
-        return self.__class__.__name__
+        return self.color
 
     ###########################################################################
     #                                                                         #
@@ -95,8 +97,8 @@ class Player(ABC):
         Calls `choose_action` in a loop. Returning None advances the phase;
         the turn ends when phases wrap back to 0.
         """
-        game_state.set_phase(0)
-        self.troops_to_place = game_state.get_game_map().get_reward(self.color)
+        game_state.set_phase(GameState.PLACE_ARMY)
+        self.troops_to_place = game_state.get_game_map().get_reward(self)
         while True:
             action = self.choose_action(game_state)
 
@@ -108,14 +110,133 @@ class Player(ABC):
                     plt.pause(0.1)
             else:
                 game_state.next_phase()
-                if game_state.get_phase() == 0:
+                if game_state.get_phase() == GameState.PLACE_ARMY:
                     return
 
 
 class RedPlayer(Player):
-    """Red player — Comunist strategy (stub, always passes)."""
+    """
+        Red player — Comunist strategy (stub, always passes).
+        Communist uses the concept that all countries are equal. Communist will
+        place its armies one by one, placing each one in the weakest country.
+        The bot will attack the weakest neighbor it has on the board, but only
+        if it has more armies than the opponent. When it comes to moving or
+        fortification the goal is that every country should have as many armies
+        as its friendly neighbors. Another feature that Communist has is that
+        it will not attack another player if it also is a Communist. At least
+        not until there are only Communist players left in the game. It might
+        seem as if Communist violates the set rule that bots should not
+        cooperation. This will only be the case if there is more than one
+        Communist in a particular game.
+    """
+
+    def __init__(self, color: str, troops_to_place: int = 0):
+        super().__init__(color, troops_to_place)
+        self.strategy = 'communist'
+
+    def __handle_placearmy_phase(self, game_state: GameState) -> Action | None:
+        troops = self.troops_to_place
+        if troops == 0:
+            self.add_completed_phase(GameState.PLACE_ARMY)
+            return None
+
+        country_to_place = utils.get_weakest_friendly_country(game_state, self)
+        
+        if country_to_place is None:
+            return None
+
+        self.troops_to_place -= 1
+        return PlaceArmyAction(country_to_place, 1)
+
+    def __handle_attack_phase(self, game_state: GameState) -> Action | None:
+        """
+        Attack with every eligible country.
+
+        A country is eligible if it has a weaker enemy neighbor and holds
+        more than 1 army. Up to 3 armies attack; post-attack movement
+        favors the newly captured country if it is more exposed.
+        """
+        owned_countries = game_state.get_game_map().get_owned_countries(self)
+
+        for country in owned_countries:
+            weakest_en = utils.weakest_enemy_neighbour_list(country)
+
+            if weakest_en is None:
+                continue
+
+            for enemy in weakest_en:
+                can_attack = (enemy.get_owner().strategy !=
+                              self.strategy or
+                              len([p for p in game_state.get_alive_players()
+                                  if p.strategy != self.strategy]) == 0)
+
+                if can_attack and \
+                        country.get_army_size() >= enemy.get_army_size() and \
+                        country.get_army_size() > 1:
+
+                    num_armies_to_attack = min(3, country.get_army_size() - 1)
+
+                    # Default: keep armies at the source after the attack
+                    troops_to_move_post_attack = (country.get_army_size() - 1
+                                                  - num_armies_to_attack) // 2
+
+                    return AttackAction(
+                        country,
+                        enemy,
+                        num_armies_to_attack,
+                        troops_to_move_post_attack
+                    )
+
+        return None  # No valid attacks found; end attack phase
+
+    def __handle_fortify_phase(self, game_state: GameState) -> Action | None:
+        """
+        TODO:
+        """
+        owned_countries = game_state.get_game_map().get_owned_countries(self)
+
+        # TODO:
+        if len(owned_countries) == 0:
+            return None
+
+        mean_army_amount = sum([c.get_army_size() for c in owned_countries]) \
+            / len(owned_countries)
+
+        sorted_countries = sorted(
+            owned_countries,
+            key=lambda c: c.get_army_size() - mean_army_amount
+        )
+
+        for to_country in sorted_countries:
+            if not to_country.get_neighbors():
+                continue
+
+            possible_from_countries = sorted_countries = sorted(
+                to_country.get_connected_friendly_countries(),
+                key=lambda c: c.get_army_size() - mean_army_amount,
+                reverse=True
+            )
+
+            for from_country in possible_from_countries:
+                if from_country.get_army_size() <= 1:
+                    break
+
+                num_armies_to_move = (from_country.get_army_size()
+                                      - to_country.get_army_size()) // 2
+
+                self.add_completed_phase(GameState.FORTIFY)
+                return FortifyAction(from_country,
+                                     to_country,
+                                     num_armies_to_move
+                                     )
 
     def choose_action(self, game_state: GameState) -> Action | None:
+        if self.is_phase_applicable(game_state, GameState.PLACE_ARMY):
+            return self.__handle_placearmy_phase(game_state)
+        elif self.is_phase_applicable(game_state, GameState.ATTACK):
+            return self.__handle_attack_phase(game_state)
+        elif self.is_phase_applicable(game_state, GameState.FORTIFY):
+            return self.__handle_fortify_phase(game_state)
         return None
 
 
@@ -169,10 +290,7 @@ class BlackPlayer(Player):
         if troops == 0:
             return None
 
-        country_to_place = utils.get_most_contested_country(
-            game_state,
-            self.color
-        )
+        country_to_place = utils.get_most_contested_country(game_state, self)
         if country_to_place is None:
             return None
 
@@ -188,9 +306,7 @@ class BlackPlayer(Player):
         more than 1 army. Up to 3 armies attack; post-attack movement
         favors the newly captured country if it is more exposed.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(
-            self.color
-        )
+        owned_countries = game_state.get_game_map().get_owned_countries(self)
 
         for country in owned_countries:
             weakest_en = utils.weakest_enemy_neighbour(country)
@@ -208,7 +324,7 @@ class BlackPlayer(Player):
 
                 # Move armies forward if the captured territory is more exposed
                 if country.get_number_of_enemy_neighbors() - 1 > \
-                        weakest_en.get_number_of_enemy_neighbors(self.color):
+                        weakest_en.get_number_of_enemy_neighbors(self):
                     num_armies_want_to_move_post_attack = 0
 
                 return AttackAction(
@@ -225,9 +341,7 @@ class BlackPlayer(Player):
         Reinforce the front by moving armies from safer to more threatened
         connected friendly countries.
         """
-        owned_countries = game_state.get_game_map().get_owned_countries(
-            self.color
-        )
+        owned_countries = game_state.get_game_map().get_owned_countries(self)
 
         # Prioritise countries with the most enemy neighbors as destinations
         sorted_countries = sorted(

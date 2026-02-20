@@ -37,7 +37,7 @@ class Game:
     def init_game_state(self) -> None:
         self.game_state = GameState(
             self.game_map,
-            [p.color for p in self.players_list]
+            self.players_list
         )
 
         num_player = len(self.players_list)
@@ -50,15 +50,18 @@ class Game:
         while len(countries_to_assign) > 0:
             for i in range(min(num_player, len(countries_to_assign))):
                 c = countries_to_assign.pop()
-                c.set_owner(self.players_list[i].color)
+                c.set_owner(self.players_list[i])
                 c.set_army_size(1)
                 starting_army[i] -= 1
 
         i = 0
         for player in self.players_list:
             player.set_troops_to_place(starting_army[i])
-            action = player.choose_action(self.game_state)
-            if action is not None:
+            while True:
+                action = player.choose_action(self.game_state)
+                if action is None:
+                    break
+
                 action.execute()
 
             i += 1
@@ -83,11 +86,14 @@ class Game:
         """ Plays the game until the end condition is met """
         while self.turn < self.game_length:
             print(f'Turn: {self.turn}')
-            for player in self.players_list:
+            for player in self.get_game_state().get_alive_players():
                 self.current_player = player
                 player.set_completed_phase([])
-                print(f'player: {self.current_player.color}')
+                print(f'player: {player}')
                 player.play_turn(self.get_game_state(), viz)  # type: ignore
+                player.is_dead = len(
+                    self.get_map().get_owned_countries(player)
+                ) == 0
                 self.game_state.next_player()  # type: ignore
 
             self.turn += 1
