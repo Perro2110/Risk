@@ -3,59 +3,56 @@ from Risk.map import Map
 from Risk.player import Player
 from Risk.game_state import GameState
 from Risk.visualizer import RiskVisualizer
+from matplotlib import pyplot as plt
 
 
 class Game:
     """ Game class of Risk """
 
-    def __init__(self, game_map: Map, game_length: int = 100):
+    def __init__(
+                self,
+                game_map: Map,
+                game_length: int = 100,
+                enable_visualizer: bool = True
+            ):
         self.game_length = game_length  # number of turns before the game ends
-        self.game_map = game_map
-        self.players_list: list[Player] = []
-        self.current_player = None
-        self.game_state = None
+        self.players: list[Player] = []
+        self.game_state = GameState(game_map, [])
+        self.viz = RiskVisualizer(self.get_game_state()) if enable_visualizer else None
         self.turn = 0
 
     def add_player(self, new_player: Player):
-        self.players_list.append(new_player)
+        self.players.append(new_player)
+        self.get_game_state().set_players(self.players)  # type: ignore
 
     def set_players(self, new_players_list: list[Player]):
-        self.players_list = new_players_list
+        self.players = new_players_list
+        self.get_game_state().set_players(self.players)  # type: ignore
 
-    def set_map(self, game_map: Map):
-        """ Sets the game map """
-        self.game_map = game_map
-
-    def get_map(self) -> Map:
-        """ Gets the game map """
-        return self.game_map
-
-    def get_game_state(self) -> GameState | None:
+    def get_game_state(self) -> GameState:
         """ Gets the game map """
         return self.game_state
 
-    def init_game_state(self) -> None:
-        self.game_state = GameState(
-            self.game_map,
-            self.players_list
-        )
+    def get_alive_players(self) -> list[Player]:
+        return [p for p in self.players if not p.is_dead]
 
-        num_player = len(self.players_list)
+    def __init_game_state(self) -> None:
+        num_player = len(self.players)
         num_starting_army = 50 - (5 * num_player)
         starting_army = [num_starting_army] * num_player
 
         # Randomly assign each country to a player
-        countries_to_assign = self.get_map().get_countries()  # type: ignore
-        random.shuffle(countries_to_assign)
-        while len(countries_to_assign) > 0:
-            for i in range(min(num_player, len(countries_to_assign))):
-                c = countries_to_assign.pop()
-                c.set_owner(self.players_list[i])
+        free_countries = self.get_game_state().get_game_map().get_countries()
+        random.shuffle(free_countries)
+        while len(free_countries) > 0:
+            for i in range(min(num_player, len(free_countries))):
+                c = free_countries.pop()
+                c.set_owner(self.players[i])
                 c.set_army_size(1)
                 starting_army[i] -= 1
 
         i = 0
-        for player in self.players_list:
+        for player in self.players:
             player.set_troops_to_place(starting_army[i])
             while True:
                 action = player.choose_action(self.game_state)
@@ -66,42 +63,66 @@ class Game:
 
             i += 1
 
-    def play(self):
-        if self.get_map() is None:
-            raise AttributeError('No game map found')
+    def __play_turn(self, player: Player):
+        """
+        Drive a full turn: place armies → attack → fortify.
 
-        if len(self.players_list) <= 1 or len(self.players_list) > 6:
+        Calls `choose_action` in a loop. Returning None advances the phase;
+        the turn ends when phases wrap back to 0.
+        """
+        self.get_game_state().set_phase(GameState.PLACE_ARMY)
+        player.set_troops_to_place(self.get_game_state()
+                                   .get_reinforcements(player))
+        while True:
+            action = player.choose_action(self.get_game_state())
+
+            if action is not None:
+                action.execute()
+                if self.viz is not None:
+                    self.viz.show(False)
+                    self.viz.update(self.get_game_state())
+                    plt.pause(0.1)
+            else:
+                self.get_game_state().next_phase()
+                if self.get_game_state().get_phase() == GameState.PLACE_ARMY:
+                    return
+
+    def __update_alive_players(self):
+        game_map = self.get_game_state().get_game_map()
+        for player in self.players:
+            player.is_dead = len(game_map.get_owned_countries(player)) == 0
+
+    def play(self):
+        if len(self.players) <= 1 or len(self.players) > 6:
             raise AttributeError('Invalid number of players')
 
         print('Initializing game state: ')
-        self.init_game_state()
+        self.__init_game_state()
         print('Initial game state: ')
         print(self.game_state)
 
         print('Game starting: ')
         random.seed()
 
-        viz = RiskVisualizer(self.get_game_state())  # type: ignore
-
         """ Plays the game until the end condition is met """
         while self.turn < self.game_length:
             print(f'Turn: {self.turn}')
-            for player in self.get_game_state().get_alive_players():
-                self.current_player = player
-                player.set_completed_phase([])
-                print(f'player: {player}')
-                player.play_turn(self.get_game_state(), viz)  # type: ignore
-                player.is_dead = len(
-                    self.get_map().get_owned_countries(player)
-                ) == 0
-                self.game_state.next_player()  # type: ignore
 
+            for player in self.get_alive_players():
+                player.set_completed_phases()
+                print(f'player: {player}')
+                self.__play_turn(player)
+                self.get_game_state().next_player()
+
+            self.__update_alive_players()
             self.turn += 1
 
-        viz.show()
+        if self.viz is not None:
+            self.viz.show()
 
         print('Final game state: ')
-        for player in self.players_list:
-            print(f"player {player.color} owns \
-                {len(self.get_map().get_owned_countries(player.color))} \
+        for player in self.players:
+            print(f"player {player} owns \
+                {len(self.get_game_state().get_game_map()
+                     .get_owned_countries(player))} \
             ")

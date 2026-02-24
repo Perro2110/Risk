@@ -421,7 +421,7 @@ class RiskVisualizer:
         ax.set_ylim(0, 1)
 
         game_map = gs.get_game_map()
-        players = gs.players.values()
+        players = gs.get_players()
         colour_map = {
             p.color: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
             for i, p in enumerate(players)

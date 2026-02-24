@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from Risk.actions import Action, PlaceArmyAction, AttackAction, FortifyAction
 from Risk.game_state import GameState
 from Risk import utils
-from matplotlib import pyplot as plt
 
 
 ###############################################################################
@@ -63,7 +62,7 @@ class Player(ABC):
         """Mark a phase as completed so it won't be re-entered this turn."""
         self.completed_phases.append(phase)
 
-    def set_completed_phase(self, phases: list = []):
+    def set_completed_phases(self, phases: list[int] = []):
         """Mark a phase as completed so it won't be re-entered this turn."""
         self.completed_phases = phases
 
@@ -80,38 +79,6 @@ class Player(ABC):
 
     def __str__(self) -> str:
         return self.color
-
-    ###########################################################################
-    #                                                                         #
-    #                         !!! NOTICE !!!                                  #    
-    #                                                                         #            
-    ###########################################################################
-    # TODO: evaluate where we want put this code here or in the Game class,   #
-    # maybe we want to put it in the Game class and call it from the Player   #
-    # class but for now we put it here for simplicity                         #
-    ###########################################################################
-    def play_turn(self, game_state: GameState, visualizer=None):
-        """
-        Drive a full turn: place armies → attack → fortify.
-
-        Calls `choose_action` in a loop. Returning None advances the phase;
-        the turn ends when phases wrap back to 0.
-        """
-        game_state.set_phase(GameState.PLACE_ARMY)
-        self.troops_to_place = game_state.get_game_map().get_reward(self)
-        while True:
-            action = self.choose_action(game_state)
-
-            if action is not None:
-                action.execute()
-                if visualizer is not None:
-                    visualizer.show(False)
-                    visualizer.update(game_state)
-                    plt.pause(0.1)
-            else:
-                game_state.next_phase()
-                if game_state.get_phase() == GameState.PLACE_ARMY:
-                    return
 
 
 class RedPlayer(Player):
@@ -141,7 +108,7 @@ class RedPlayer(Player):
             return None
 
         country_to_place = utils.get_weakest_friendly_country(game_state, self)
-        
+
         if country_to_place is None:
             return None
 
@@ -167,7 +134,7 @@ class RedPlayer(Player):
             for enemy in weakest_en:
                 can_attack = (enemy.get_owner().strategy !=
                               self.strategy or
-                              len([p for p in game_state.get_alive_players()
+                              len([p for p in game_state.get_players()
                                   if p.strategy != self.strategy]) == 0)
 
                 if can_attack and \
@@ -360,10 +327,11 @@ class BlackPlayer(Player):
 
                 num_armies_to_move = from_country.get_army_size() - 1
                 self.add_completed_phase(GameState.FORTIFY)
-                return FortifyAction(from_country,
-                                     to_country,
-                                     num_armies_to_move
-                                     )
+                return FortifyAction(
+                    from_country,
+                    to_country,
+                    num_armies_to_move
+                )
 
     def choose_action(self, game_state: GameState) -> Action | None:
         """Dispatch to the appropriate phase handler."""

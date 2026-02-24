@@ -58,7 +58,7 @@ class FortifyAction(Action):
               {self.from_country.get_army_size()}) \
               is placing {self.num_armies} troops in country \
               {self.to_country.get_name()} {self.to_country.get_army_size()}!")
-        
+
         self.from_country.set_army_size(
             self.from_country.get_army_size() - self.num_armies)
         self.to_country.set_army_size(

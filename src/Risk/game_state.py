@@ -19,40 +19,58 @@ class GameState:
                 players: list[object],
             ):
         self.game_map = game_map
-        self.players = {player.color: player for player in players}
-        self.player_names = [player.color for player in players]
+        self.players = players
         self.current_player_index = 0
         self.phase = 0  # 0: place army, 1: attack, 2: fortify
 
+    def set_game_map(self, game_map: Map):
+        """ Add a game map to the game state """
+        self.game_map = game_map
+
     def get_game_map(self):
+        """ Get the game map """
         return self.game_map
 
-    def get_current_player(self):
-        return self.players[self.player_names[self.current_player_index]]
+    def get_reinforcements(self, player):
+        """ Returns the number of placeable troops for the selected player """
+        return self.get_game_map().get_reward(player)
 
-    def get_alive_players(self):
-        return [p for p in self.players.values() if not p.is_dead]
+    def get_current_player(self):
+        """ Get the current player """
+        return self.players[self.current_player_index]
+
+    def set_players(self, players: list[object]):
+        """ Sets the game players """
+        self.players = players
+
+    def get_players(self):
+        """ Get the game players """
+        return self.players
 
     def next_player(self):
-        self.current_player_index = (
-            self.current_player_index + 1
-        ) % len(self.players)
+        """ Changes the current player to the next in the player order """
+        next_index = self.current_player_index + 1
+        self.current_player_index = next_index % len(self.players)
 
-    def get_phase(self):
+    def get_phase(self) -> int:
+        """ Get the current game phase """
         return self.phase
 
-    def set_phase(self, phase):
+    def set_phase(self, phase: int):
+        """ Sets the game phase """
+        if phase > self.FORTIFY or phase < self.PLACE_ARMY:
+            raise ValueError("Invalid game phase")
+
         self.phase = phase
 
     def next_phase(self):
+        """ Changes the current phase to the next in the phase order """
         self.phase = (self.phase + 1) % 3
 
     def __str__(self):
         phases = ['place army', 'attack', 'fortify']
         return f'\
-            current_player : {self.players[self.player_names[
-                self.current_player_index
-            ]]} \n \
+            current_player : {self.players[self.current_player_index]} \n \
             phase: {phases[self.phase]} \n \
             game_map: {self.game_map} \n \
         '
