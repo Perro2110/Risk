@@ -130,6 +130,8 @@ class AttackAction(Action):
         # If the attacker conquered the to_country, move armies in
         if self.to_country.get_army_size() == 0:
             print("Attacking player won")
+            self.from_country.get_owner() \
+                .has_won_last_attack = True  # type: ignore
             self.to_country.set_owner(self.from_country.get_owner())
             fortify_action = FortifyAction(
                 self.from_country,
@@ -138,3 +140,6 @@ class AttackAction(Action):
                 (self.army_want_to_move + self.num_armies)
             )
             fortify_action.execute()
+
+        self.from_country.get_owner() \
+            .has_won_last_attack = False  # type: ignore

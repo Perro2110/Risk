@@ -8,25 +8,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from Risk.actions import Action, PlaceArmyAction, AttackAction, FortifyAction
 from Risk.game_state import GameState
+from Risk.map import Country
 from Risk import utils
 
 
-###############################################################################
-# TODO: implement different player classes with different strategies,         #
-# for now we will implement only dummy players that                           #
-#                                               always end their turn without #
-#                                                                             #
-###############################################################################
-# class TreePlayer(Player):                                                   #
-#     """ Trees player class """                                              #
-#     def choose_action(self, game_state: GameState) -> Action|None:          #
-#         """                                                                 #
-#             This is a dummy implementation of the choose_action method, it  #
-#             always returns None (end turn) but in the future it will be     #
-#             implemented with a more sophisticated strategy.                 #
-#         """                                                                 #
-#         return evaluate(game_state)                                         #
-###############################################################################
 class Player(ABC):
     """
     Abstract base class for all Risk players.
@@ -45,10 +30,12 @@ class Player(ABC):
         self.color = color
         self.strategy = None
         self.is_dead = False
+        self.is_attacking_hog_wild = False
+        self.is_stalemate = False
+        self.has_won_last_attack = False
         self.troops_to_place = troops_to_place
         self.completed_phases: list[int] = []
 
-    @abstractmethod
     def choose_action(self, game_state: GameState) -> Action | None:
         """
         Choose the next action to execute, or None to end the current phase.
@@ -56,6 +43,279 @@ class Player(ABC):
         Called repeatedly by `play_turn` until None is returned, at which
         point the game advances to the next phase.
         """
+        if self.is_phase_applicable(game_state, GameState.PLACE_ARMY):
+            return self.place_armies(game_state)
+
+        elif self.is_phase_applicable(game_state, GameState.ATTACK):
+            return self.attack(game_state)
+
+        elif self.is_phase_applicable(game_state, GameState.FORTIFY):
+            return self.fortify(game_state)
+
+        return None
+
+    @abstractmethod
+    def place_armies(self, game_state: GameState) -> Action | None:
+        """ The place army method used to place armies """
+        pass
+
+    @abstractmethod
+    def attack(self, game_state: GameState) -> Action | None:
+        """ The attack method used to attack """
+        pass
+
+    @abstractmethod
+    def fortify(self, game_state: GameState) -> Action | None:
+        """ The fortify method used to fortify """
+        pass
+
+    def turn_setup(self, game_state: GameState):
+        """ Pre turn calculations in case a bot needs informations """
+        pass
+
+    def hog_wild_check(self, game_state: GameState):
+        players = game_state.get_players()
+        enemy_army_combined_size = 0
+
+        for player in players:
+            if player is self:
+                continue
+
+            enemy_army_combined_size += game_state.get_game_map() \
+                                                  .get_owned_army_size(player)
+
+        self.is_attacking_hog_wild = game_state.get_game_map() \
+            .get_owned_army_size(self) > enemy_army_combined_size
+
+    def attack_hog_wild(self, game_state: GameState) -> Action | None:
+        if self.is_attacking_hog_wild:
+            self.attack_as_much_as_possible(game_state)
+
+    def stalemate_check(self, game_state: GameState):
+        self.is_stalemate = game_state.get_game_map() \
+            .get_owned_army_size(self) > 500
+
+    def attack_stalemate(self, game_state: GameState) -> Action | None:
+        if self.is_stalemate:
+            self.attack_as_much_as_possible(game_state)
+
+    def attack_easy_expand(
+                self,
+                game_state: GameState,
+                root: list[Country] | Country
+            ) -> Action | None:
+        """
+        Attack only when a border country has exactly one enemy neighbor and
+        outnumbers it, expanding the cluster cleanly with minimal risk.
+
+        For each border country of the given cluster, if it faces exactly one
+        enemy neighbor and holds more armies than that enemy, it attacks and
+        moves everything in to push the frontier forward.
+
+        Args:
+            game_state: The current game state.
+            cluster: The list of countries forming the cluster whose borders
+                    will be evaluated for easy-expand attacks.
+
+        Returns:
+            An AttackAction if a valid easy-expand opportunity is found,
+            or None if no such attack exists.
+        """
+        borders = utils.get_cluster_borders(root)
+        if borders is None:
+            return None
+
+        for border in borders:
+            enemy_neighbors = border.get_enemy_neighbors(self)
+            if len(enemy_neighbors) == 1:
+                enemy = enemy_neighbors[0]
+                if border.get_army_size() > enemy.get_army_size():
+                    num_armies_to_attack = min(3, border.get_army_size() - 1)
+                    troops_to_move_post_attack = border.get_army_size() - 1 \
+                        - num_armies_to_attack
+                    return AttackAction(
+                        border,
+                        enemy,
+                        num_armies_to_attack,
+                        troops_to_move_post_attack
+                    )
+
+        return None
+
+    def attack_fill_out(
+                self,
+                game_state: GameState,
+                root: list[Country] | Country
+            ) -> Action | None:
+        """
+        Attack enemy countries that are completely surrounded by friendly territory,
+        filling out gaps within the cluster to consolidate control.
+
+        For each border country of the cluster, if an enemy neighbor has no
+        enemy neighbors of its own (i.e. it is entirely surrounded by the
+        player's countries), and the border country outnumbers it, attack and
+        move zero armies in — keeping strength on the border.
+
+        Args:
+            game_state: The current game state.
+            cluster: The list of countries forming the cluster whose borders
+                    will be evaluated for fill-out attacks.
+
+        Returns:
+            An AttackAction if a valid fill-out opportunity is found,
+            or None if no such attack exists.
+        """
+        borders = utils.get_cluster_borders(root)
+        if borders is None:
+            return None
+
+        for border in borders:
+            for enemy in border.get_enemy_neighbors(self):
+                if len(enemy.get_enemy_neighbors(self)) == 0:
+                    if border.get_army_size() > enemy.get_army_size():
+                        num_armies_to_attack = min(3, border.get_army_size() - 1)
+                        return AttackAction(
+                            border,
+                            enemy,
+                            num_armies_to_attack,
+                            0  # move zero in — keep strength on the border
+                        )
+
+        return None
+
+    def attack_consolidate(
+                self,
+                game_state: GameState,
+                root: list[Country] | Country
+            ) -> Action | None:
+        """
+        Consolidate borders by coordinating attacks from multiple border countries
+        into a single common enemy, reducing the number of exposed frontiers.
+
+        For each border country with exactly one enemy neighbor, check if that
+        enemy is bordered by more than one of the player's countries. If so,
+        gather all friendly countries that also have only that single enemy
+        neighbor and check whether their combined armies outnumber the target.
+        If the odds are favorable, attack from each participant in turn, moving
+        everything in to merge the frontlines.
+
+        Args:
+            game_state: The current game state.
+            cluster: The list of countries forming the cluster whose borders
+                    will be evaluated for consolidation attacks.
+
+        Returns:
+            An AttackAction if a valid consolidation attack is found,
+            or None if no such opportunity exists.
+        """
+        borders = utils.get_cluster_borders(root)
+        if borders is None:
+            return None
+
+        for border in borders:
+            enemy_neighbors = border.get_enemy_neighbors(self)
+
+            if len(enemy_neighbors) != 1:
+                continue
+
+            enemy = enemy_neighbors[0]
+
+            # Enemy must be bordered by more than one of our countries
+            if enemy.get_number_of_friendly_neighbors(self) <= 1:
+                continue
+
+            # Get all friendly neighbors of the enemy that have only this one enemy
+            participants = [
+                n for n in enemy.get_friendly_neighbors(self)
+                if n.get_number_of_enemy_neighbors() == 1
+            ]
+
+            our_armies = sum(c.get_army_size() for c in participants)
+            if our_armies <= enemy.get_army_size():
+                continue
+
+            # Attack from each participant until the enemy is conquered
+            for attacker in participants:
+                if enemy.get_owner() is self:
+                    break
+                if attacker.get_army_size() > 1 \
+                        and attacker.is_neighbor(enemy):
+                    num_armies_to_attack = min(3, attacker.get_army_size() - 1)
+                    troops_to_move_post_attack = attacker.get_army_size() - 1 \
+                        - num_armies_to_attack
+                    return AttackAction(
+                        attacker,
+                        enemy,
+                        num_armies_to_attack,
+                        troops_to_move_post_attack
+                    )
+
+        return None
+
+    def attack_split_up(
+                self,
+                game_state: GameState,
+                cluster: list[Country],
+                attack_ratio: float = 1.0
+            ) -> Action | None:
+        """
+        Split a border country's armies across all its enemy neighbors when
+        we sufficiently outnumber them, aggressively expanding in all directions.
+
+        For each border country, sum the armies of all its enemy neighbors. If
+        the border country's armies exceed that total multiplied by attack_ratio,
+        divide armies evenly across enemies and attack each one in turn, moving
+        the per-enemy share in after each capture.
+
+        Note: if armies are depleted early in the sequence of attacks, later
+        enemies in the same border country's list may not be reached. This is
+        an accepted limitation mirroring the original implementation.
+
+        Args:
+            game_state: The current game state.
+            cluster: The list of countries forming the cluster whose borders
+                    will be evaluated for split-up attacks.
+            attack_ratio: Multiplier applied to total enemy armies to set the
+                        threshold for attacking. 1.0 means we must at least
+                        match them; higher values require greater superiority.
+
+        Returns:
+            An AttackAction if a valid split-up attack is found,
+            or None if no such opportunity exists.
+        """
+        borders = utils.get_cluster_borders(cluster)
+        if borders is None:
+            return None
+
+        for border in borders:
+            enemy_neighbors = border.get_enemy_neighbors(self)
+            enemy_armies_total = sum(e.get_army_size() for e in enemy_neighbors)
+            num_enemies = max(len(enemy_neighbors), 1)
+
+            if border.get_army_size() > enemy_armies_total * attack_ratio:
+                armies_per = border.get_army_size() // num_enemies
+
+                for enemy in enemy_neighbors:
+                    if border.get_army_size() <= 1:
+                        break
+                    num_armies_to_attack = min(3, border.get_army_size() - 1)
+                    armies_per = min(armies_per, border.get_army_size() - 1)
+                    return AttackAction(
+                        border,
+                        enemy,
+                        num_armies_to_attack,
+                        armies_per
+                    )
+
+        return None
+
+    def attack_as_much_as_possible(
+                self,
+                game_state: GameState
+            ) -> Action | None:
+
+        # TODO: add
+
         pass
 
     def add_completed_phase(self, phase: int):
@@ -101,7 +361,7 @@ class RedPlayer(Player):
         super().__init__(color, troops_to_place)
         self.strategy = 'communist'
 
-    def __handle_placearmy_phase(self, game_state: GameState) -> Action | None:
+    def place_armies(self, game_state: GameState) -> Action | None:
         troops = self.troops_to_place
         if troops == 0:
             self.add_completed_phase(GameState.PLACE_ARMY)
@@ -115,7 +375,7 @@ class RedPlayer(Player):
         self.troops_to_place -= 1
         return PlaceArmyAction(country_to_place, 1)
 
-    def __handle_attack_phase(self, game_state: GameState) -> Action | None:
+    def attack(self, game_state: GameState) -> Action | None:
         """
         Attack with every eligible country.
 
@@ -132,13 +392,7 @@ class RedPlayer(Player):
                 continue
 
             for enemy in weakest_en:
-                can_attack = (enemy.get_owner().strategy !=
-                              self.strategy or
-                              len([p for p in game_state.get_players()
-                                  if p.strategy != self.strategy]) == 0)
-
-                if can_attack and \
-                        country.get_army_size() >= enemy.get_army_size() and \
+                if country.get_army_size() >= enemy.get_army_size() and \
                         country.get_army_size() > 1:
 
                     num_armies_to_attack = min(3, country.get_army_size() - 1)
@@ -146,6 +400,8 @@ class RedPlayer(Player):
                     # Default: keep armies at the source after the attack
                     troops_to_move_post_attack = (country.get_army_size() - 1
                                                   - num_armies_to_attack) // 2
+
+                    self.add_completed_phase(GameState.ATTACK)
 
                     return AttackAction(
                         country,
@@ -156,7 +412,7 @@ class RedPlayer(Player):
 
         return None  # No valid attacks found; end attack phase
 
-    def __handle_fortify_phase(self, game_state: GameState) -> Action | None:
+    def fortify(self, game_state: GameState) -> Action | None:
         """
         TODO:
         """
@@ -178,7 +434,7 @@ class RedPlayer(Player):
             if not to_country.get_neighbors():
                 continue
 
-            possible_from_countries = sorted_countries = sorted(
+            possible_from_countries = sorted(
                 to_country.get_connected_friendly_countries(),
                 key=lambda c: c.get_army_size() - mean_army_amount,
                 reverse=True
@@ -192,19 +448,11 @@ class RedPlayer(Player):
                                       - to_country.get_army_size()) // 2
 
                 self.add_completed_phase(GameState.FORTIFY)
-                return FortifyAction(from_country,
-                                     to_country,
-                                     num_armies_to_move
-                                     )
-
-    def choose_action(self, game_state: GameState) -> Action | None:
-        if self.is_phase_applicable(game_state, GameState.PLACE_ARMY):
-            return self.__handle_placearmy_phase(game_state)
-        elif self.is_phase_applicable(game_state, GameState.ATTACK):
-            return self.__handle_attack_phase(game_state)
-        elif self.is_phase_applicable(game_state, GameState.FORTIFY):
-            return self.__handle_fortify_phase(game_state)
-        return None
+                return FortifyAction(
+                    from_country,
+                    to_country,
+                    num_armies_to_move
+                )
 
 
 class PurplePlayer(Player):
@@ -217,8 +465,172 @@ class PurplePlayer(Player):
 class YellowPlayer(Player):
     """Yellow player — Cluster strategy (stub, always passes)."""
 
-    def choose_action(self, game_state: GameState) -> Action | None:
+    def __init__(self, color: str, troops_to_place: int = 0):
+        super().__init__(color, troops_to_place)
+        self.best_continent = None
+
+    def turn_setup(self, game_state: GameState):
+        """ Trovare il suo continente migliore """
+        max_size = len(game_state.get_game_map().get_countries()) \
+            // len(game_state.get_players())
+        continents = game_state.get_game_map().get_continents()
+        best_cluster = 0
+        best_continent = None
+
+        for continent in continents:
+            if len(continent.get_countries()) > max_size:
+                continue
+
+            cluster = continent.get_best_cluster(self)
+
+            if cluster is None:
+                continue
+
+            cluster_size = len(cluster)
+            if cluster_size > best_cluster:
+                best_cluster = cluster_size
+                best_continent = continent
+
+        self.borders = None
+        self.has_won_last_attack = True
+        self.best_continent = best_continent
+        self.done_attack_step = [False] * 5
+
+    def place_armies(self, game_state: GameState) -> Action | None:
+        """
+        Mette le truppe uniformemente sul bordo del suo cluster nel continente
+        """
+        troops = self.troops_to_place
+        if troops == 0:
+            self.add_completed_phase(GameState.PLACE_ARMY)
+            return None
+
+        if self.best_continent is None:
+            return None
+
+        if self.borders is None:
+            cluster = self.best_continent.get_best_cluster(self)
+
+            if cluster is None:
+                return None
+
+            borders = utils.get_cluster_borders(cluster)
+
+            if borders is None:
+                return None
+
+            self.borders = borders
+
+        country_to_place = utils.get_weakest_country(self.borders)
+
+        if country_to_place is None:
+            return None
+
+        self.troops_to_place -= 1
+        return PlaceArmyAction(country_to_place, 1)
+
+    def attack(self, game_state: GameState) -> Action | None:
+        """
+        I bordi del cluster nel continente attaccano i vicini con meno truppe
+        Come black player sposta dopo attacco se il paese che conquista ha
+        vicini più deboli
+        """
+        if self.borders is None:
+            return None
+
+        borders = self.borders
+        if not self.done_attack_step[0]:
+            if self.has_won_last_attack:
+                action = self.attack_easy_expand(game_state, borders)
+                if action is not None:
+                    return action
+            self.done_attack_step[0] = True
+            self.has_won_last_attack = True
+
+        if not self.done_attack_step[1]:
+            self.done_attack_step[1] = True
+
+            action = self.attack_fill_out(game_state, borders)
+            if action is not None:
+                return action
+
+            self.has_won_last_attack = True
+
+        if not self.done_attack_step[2]:
+            if self.has_won_last_attack:
+                action = self.attack_easy_expand(game_state, borders)
+                if action is not None:
+                    return action
+            self.done_attack_step[2] = True
+            self.has_won_last_attack = True
+
+        if not self.done_attack_step[3]:
+            if self.has_won_last_attack:
+                action = self.attack_consolidate(game_state, borders)
+                if action is not None:
+                    return action
+            self.done_attack_step[3] = True
+            self.has_won_last_attack = True
+
+        if not self.done_attack_step[4]:
+            if self.has_won_last_attack:
+                action = self.attack_split_up(game_state, borders, 1.2)
+                if action is not None:
+                    return action
+            self.done_attack_step[4] = True
+
+        self.add_completed_phase(GameState.ATTACK)
         return None
+
+    def fortify(self, game_state: GameState) -> Action | None:
+        """
+        Sposta da dove ha più truppe verso il bordo del cluster con meno truppe
+        bilanciando le armate dei 2 paesi
+        """
+        if self.best_continent is None:
+            return None
+
+        cluster = self.best_continent.get_best_cluster(self)
+
+        if cluster is None:
+            return None
+
+        borders = utils.get_cluster_borders(cluster)
+
+        if borders is None:
+            return None
+
+        mean_army_amount = sum([c.get_army_size() for c in borders]) \
+            / len(borders)
+
+        sorted_countries = sorted(
+            borders,
+            key=lambda c: c.get_army_size() - mean_army_amount
+        )
+
+        for to_country in sorted_countries:
+            if not to_country.get_neighbors():
+                continue
+
+            possible_from_countries = sorted(
+                cluster,
+                key=lambda c: c.get_army_size() - mean_army_amount,
+                reverse=True
+            )
+
+            for from_country in possible_from_countries:
+                if from_country.get_army_size() <= 1:
+                    break
+
+                num_armies_to_move = (from_country.get_army_size()
+                                      - to_country.get_army_size()) // 2
+
+                self.add_completed_phase(GameState.FORTIFY)
+                return FortifyAction(
+                    from_country,
+                    to_country,
+                    num_armies_to_move
+                )
 
 
 class GreenPlayer(Player):
@@ -251,7 +663,7 @@ class BlackPlayer(Player):
       higher-threat friendly neighbors to reinforce the front.
     """
 
-    def __handle_placearmy_phase(self, game_state: GameState) -> Action | None:
+    def place_armies(self, game_state: GameState) -> Action | None:
         """Place all available troops on the most contested owned country."""
         troops = self.troops_to_place
         if troops == 0:
@@ -265,7 +677,7 @@ class BlackPlayer(Player):
         self.add_completed_phase(GameState.PLACE_ARMY)
         return PlaceArmyAction(country_to_place, troops)
 
-    def __handle_attack_phase(self, game_state: GameState) -> Action | None:
+    def attack(self, game_state: GameState) -> Action | None:
         """
         Attack with every eligible country.
 
@@ -303,7 +715,7 @@ class BlackPlayer(Player):
 
         return None  # No valid attacks found; end attack phase
 
-    def __handle_fortify_phase(self, game_state: GameState) -> Action | None:
+    def fortify(self, game_state: GameState) -> Action | None:
         """
         Reinforce the front by moving armies from safer to more threatened
         connected friendly countries.
@@ -333,12 +745,4 @@ class BlackPlayer(Player):
                     num_armies_to_move
                 )
 
-    def choose_action(self, game_state: GameState) -> Action | None:
-        """Dispatch to the appropriate phase handler."""
-        if self.is_phase_applicable(game_state, GameState.PLACE_ARMY):
-            return self.__handle_placearmy_phase(game_state)
-        elif self.is_phase_applicable(game_state, GameState.ATTACK):
-            return self.__handle_attack_phase(game_state)
-        elif self.is_phase_applicable(game_state, GameState.FORTIFY):
-            return self.__handle_fortify_phase(game_state)
         return None

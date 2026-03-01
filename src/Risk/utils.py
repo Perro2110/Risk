@@ -48,6 +48,16 @@ def get_weakest_friendly_country(game_state: GameState, player) \
     )
 
 
+def get_weakest_country(countries: list[Country]) -> Country | None:
+    if len(countries) == 0:
+        return None
+
+    return min(
+        countries,
+        key=lambda country: country.get_army_size()
+    )
+
+
 def weakest_enemy_neighbour(country: Country, player=None) \
         -> Country | None:
 
@@ -78,3 +88,29 @@ def weakest_enemy_neighbour_list(country: Country, player=None) \
         enemy_neighbours,
         key=lambda country: country.get_army_size()
     )
+
+
+def get_cluster_borders(root: list[Country] | Country) -> list[Country] | None:
+    """
+    Returns the border countries of a cluster — countries that have at least
+    one enemy neighbor.
+
+    A cluster is a group of countries controlled by the same player. Border
+    countries are those on the edge of the cluster, meaning they are adjacent
+    to at least one country owned by a different player.
+
+    Args:
+        root: A single Country or a list of Countries representing the cluster.
+
+    Returns:
+        A list of border Countries, or None if the input is None/empty or no
+        border countries exist.
+    """
+    if root is None:
+        return None
+
+    cluster = root if isinstance(root, list) else [root]
+
+    borders = [c for c in cluster if c.get_number_of_enemy_neighbors() > 0]
+
+    return borders if borders else None

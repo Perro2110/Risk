@@ -339,7 +339,7 @@ class RiskVisualizer:
 
         colour_map: dict[str, str] = {
             p: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
-            for i, p in enumerate(gs.player_names)
+            for i, p in enumerate([p.color for p in gs.players])
         }
         gs_countries = {
             c.get_name(): c for c in gs.get_game_map().get_countries()
@@ -548,7 +548,7 @@ class RiskVisualizer:
         cur = gs.get_phase()
         player = gs.get_current_player()
         p_col = PLAYER_COLOURS[
-            gs.player_names.index(player.color) % len(PLAYER_COLOURS)
+            [p.color for p in gs.players].index(player.color) % len(PLAYER_COLOURS)
         ]
 
         ax.text(0.01, 0.5, f"  TURN ▶  {player.color}",

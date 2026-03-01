@@ -54,7 +54,6 @@ class Country:
     #####################################
     # utility functions
     #####################################
-
     def add_neighbor(self, neighbor):
         """ Adds a neighbor to the country """
         self.neighbors.append(neighbor)
@@ -98,7 +97,7 @@ class Country:
             Returns all friendly countries connected to this country
         """
         owner = self.get_owner()
-        visited = set()
+        visited: set[Country] = set()
         queue: list[Country] = [self]
 
         while queue:
@@ -110,7 +109,8 @@ class Country:
                 if neighbor not in visited:
                     queue.append(neighbor)
 
-        return [c for c in list(visited) if c is not self]
+        connected: list[Country] = [c for c in list(visited) if c is not self]
+        return connected
 
     def __str__(self):
         return self.name
@@ -128,10 +128,10 @@ class Continent:
         self.reward = reward
 
     # getter and setter for countries
-    def get_countries(self):
+    def get_countries(self) -> list[Country]:
         return self.countries
 
-    def set_countries(self, countries):
+    def set_countries(self, countries: list[Country]):
         self.countries = countries
 
     # getter and setter for reward
@@ -159,7 +159,25 @@ class Continent:
             return self.reward
         return 0
 
-    def get_owned_countries(self, player: object):
+    def get_best_cluster(self, player: object) -> list[Country] | None:
+        countries = self.get_owned_countries(player)
+        cluster_size = 0
+        best_cluster = None
+
+        while len(countries) > 0:
+            current = countries[0]
+
+            cluster = current.get_connected_friendly_countries() + [current]
+            if len(cluster) > cluster_size:
+                cluster_size = len(cluster)
+                best_cluster = cluster
+
+            # Remove the countries that are inside an already checked cluster
+            countries = [c for c in countries if c not in cluster]
+
+        return best_cluster
+
+    def get_owned_countries(self, player: object) -> list[Country]:
         """
         Returns the list of countries in the continent that are controlled
         by the player.
@@ -170,6 +188,15 @@ class Continent:
                 owned_countries.append(country)
         return owned_countries
 
+    def get_owned_army_size(self, player: object) -> int:
+        """ Returns the army size on the map controlled by the player """
+        countries = self.get_owned_countries(player)
+        owned = 0
+        for country in countries:
+            owned += country.get_army_size()
+
+        return owned
+
 
 class Map:
     """ Risk game map class """
@@ -178,7 +205,7 @@ class Map:
         self.continents = continents
 
     # getter and setter for continents
-    def get_continents(self):
+    def get_continents(self) -> list[Continent]:
         return self.continents
 
     def set_continents(self, continents):
@@ -217,6 +244,13 @@ class Map:
         owned = []
         for continent in self.continents:
             owned.extend(continent.get_owned_countries(player))
+        return owned
+
+    def get_owned_army_size(self, player: object) -> int:
+        """ Returns the army size on the map controlled by the player """
+        owned = 0
+        for continent in self.continents:
+            owned += continent.get_owned_army_size(player)
         return owned
 
     #####################################

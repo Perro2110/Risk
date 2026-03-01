@@ -16,10 +16,11 @@ class GameState:
     def __init__(
                 self,
                 game_map: Map,
-                players: list[object],
+                players: list[object]
             ):
         self.game_map = game_map
         self.players = players
+        self.leaderboard = []
         self.current_player_index = 0
         self.phase = 0  # 0: place army, 1: attack, 2: fortify
 
@@ -51,6 +52,10 @@ class GameState:
         """ Changes the current player to the next in the player order """
         next_index = self.current_player_index + 1
         self.current_player_index = next_index % len(self.players)
+
+    def add_to_leaderboard(self, player: object):
+        """ Add the player to the start of the leaderboard """
+        self.leaderboard.insert(0, player)
 
     def get_phase(self) -> int:
         """ Get the current game phase """

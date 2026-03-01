@@ -18,7 +18,7 @@ class Game:
         self.game_length = game_length  # number of turns before the game ends
         self.players: list[Player] = []
         self.game_state = GameState(game_map, [])
-        self.viz = RiskVisualizer(self.get_game_state()) if enable_visualizer else None
+        self.enable_visualizer = enable_visualizer
         self.turn = 0
 
     def add_player(self, new_player: Player):
@@ -30,11 +30,20 @@ class Game:
         self.get_game_state().set_players(self.players)  # type: ignore
 
     def get_game_state(self) -> GameState:
-        """ Gets the game map """
+        """ Gets the game state """
         return self.game_state
+
+    def get_map(self) -> Map:
+        """ Gets the game map """
+        return self.get_game_state().get_game_map()
 
     def get_alive_players(self) -> list[Player]:
         return [p for p in self.players if not p.is_dead]
+
+    def is_game_over(self) -> bool:
+        """ Returns true if the game is over """
+        return self.turn >= self.game_length \
+            or len(self.get_alive_players()) == 1
 
     def __init_game_state(self) -> None:
         num_player = len(self.players)
@@ -63,6 +72,9 @@ class Game:
 
             i += 1
 
+        self.viz = RiskVisualizer(self.get_game_state()) \
+            if self.enable_visualizer else None
+
     def __play_turn(self, player: Player):
         """
         Drive a full turn: place armies → attack → fortify.
@@ -71,8 +83,11 @@ class Game:
         the turn ends when phases wrap back to 0.
         """
         self.get_game_state().set_phase(GameState.PLACE_ARMY)
-        player.set_troops_to_place(self.get_game_state()
-                                   .get_reinforcements(player))
+        player.set_troops_to_place(
+            self.get_game_state().get_reinforcements(player)
+        )
+        player.turn_setup(self.get_game_state())
+
         while True:
             action = player.choose_action(self.get_game_state())
 
@@ -89,8 +104,10 @@ class Game:
 
     def __update_alive_players(self):
         game_map = self.get_game_state().get_game_map()
-        for player in self.players:
+        for player in self.get_alive_players():
             player.is_dead = len(game_map.get_owned_countries(player)) == 0
+            if player.is_dead:
+                self.get_game_state().add_to_leaderboard(player)
 
     def play(self):
         if len(self.players) <= 1 or len(self.players) > 6:
@@ -105,17 +122,32 @@ class Game:
         random.seed()
 
         """ Plays the game until the end condition is met """
-        while self.turn < self.game_length:
+        while not self.is_game_over():
             print(f'Turn: {self.turn}')
 
             for player in self.get_alive_players():
-                player.set_completed_phases()
+                player.set_completed_phases([])
                 print(f'player: {player}')
                 self.__play_turn(player)
                 self.get_game_state().next_player()
 
             self.__update_alive_players()
             self.turn += 1
+
+        if len(self.get_alive_players()) == 1:
+            self.get_game_state().add_to_leaderboard(
+                self.get_alive_players()[0]
+            )
+        else:
+            # Sort players based on the number of controlled countries reversed
+            sorted_players = sorted(
+                self.get_alive_players(),
+                key=lambda player: self.get_map().get_num_countries(player),
+                reverse=True
+            )
+
+            for player in sorted_players:
+                self.get_game_state().add_to_leaderboard(player)
 
         if self.viz is not None:
             self.viz.show()
