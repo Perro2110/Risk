@@ -53,6 +53,9 @@ class FortifyAction(Action):
     def execute(self):
         """ Executes the action """
 
+        if self.num_armies < 0:
+            return
+
         print(f"player {self.from_country.get_owner()} \
               (country {self.from_country.get_name()} \
               {self.from_country.get_army_size()}) \
@@ -141,5 +144,5 @@ class AttackAction(Action):
             )
             fortify_action.execute()
 
-        self.from_country.get_owner() \
-            .has_won_last_attack = False  # type: ignore
+            # We return true so the game can update the player has won status
+            return True

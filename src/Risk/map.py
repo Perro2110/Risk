@@ -220,7 +220,7 @@ class Map:
         for continent in self.continents:
             reward += continent.get_reward(player)
         reward += self.get_num_countries(player) // 3
-        return reward
+        return max(reward, 3)
 
     def get_countries(self) -> list[Country]:
         """ Returns all the countries """

@@ -22,10 +22,16 @@ class Game:
         self.turn = 0
 
     def add_player(self, new_player: Player):
+        if self.turn > 0:
+            raise AttributeError("Cannot add player while game is running")
+
         self.players.append(new_player)
         self.get_game_state().set_players(self.players)  # type: ignore
 
     def set_players(self, new_players_list: list[Player]):
+        if self.turn > 0:
+            raise AttributeError("Cannot change players while game is running")
+
         self.players = new_players_list
         self.get_game_state().set_players(self.players)  # type: ignore
 
@@ -62,9 +68,10 @@ class Game:
 
         i = 0
         for player in self.players:
+            player.set_game_state(self.game_state)
             player.set_troops_to_place(starting_army[i])
             while True:
-                action = player.choose_action(self.game_state)
+                action = player.choose_action()
                 if action is None:
                     break
 
@@ -86,13 +93,17 @@ class Game:
         player.set_troops_to_place(
             self.get_game_state().get_reinforcements(player)
         )
-        player.turn_setup(self.get_game_state())
+        player.turn_setup()
 
         while True:
-            action = player.choose_action(self.get_game_state())
+            action = player.choose_action()
 
             if action is not None:
-                action.execute()
+                result = action.execute()
+
+                if isinstance(result, bool):
+                    player.has_won_last_attack = result
+
                 if self.viz is not None:
                     self.viz.show(False)
                     self.viz.update(self.get_game_state())
@@ -109,24 +120,26 @@ class Game:
             if player.is_dead:
                 self.get_game_state().add_to_leaderboard(player)
 
-    def play(self):
+    def play(self, seed: int | None = None):
         if len(self.players) <= 1 or len(self.players) > 6:
             raise AttributeError('Invalid number of players')
+
+        self.turn = 0
 
         print('Initializing game state: ')
         self.__init_game_state()
         print('Initial game state: ')
         print(self.game_state)
 
-        print('Game starting: ')
-        random.seed()
+        print(f'Game starting{f' with seed {seed}' if seed else ''}: ')
+        random.seed(seed)
 
         """ Plays the game until the end condition is met """
         while not self.is_game_over():
             print(f'Turn: {self.turn}')
 
             for player in self.get_alive_players():
-                player.set_completed_phases([])
+                player.set_completed_phases()
                 print(f'player: {player}')
                 self.__play_turn(player)
                 self.get_game_state().next_player()
