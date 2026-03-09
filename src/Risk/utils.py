@@ -1,18 +1,15 @@
-from Risk.map import Country
+from Risk.map import Country, Continent
 from Risk.game_state import GameState
 
 
-def get_most_contested_country(game_state: GameState, player) \
+def get_most_contested_country(countries: list[Country], player) \
         -> Country | None:
 
-    owned_countries = game_state.get_game_map() \
-        .get_owned_countries(player)
-
-    if len(owned_countries) == 0:
+    if len(countries) == 0:
         return None
 
     return max(
-        owned_countries,
+        countries,
         key=lambda country: country.get_number_of_enemy_neighbors(player)
     )
 
@@ -88,6 +85,30 @@ def weakest_enemy_neighbour_list(country: Country, player=None) \
         enemy_neighbours,
         key=lambda country: country.get_army_size()
     )
+
+
+def border_need_help(border: Country, border_army_size_min: int = 20) -> bool:
+    return border.get_army_size() <= border_army_size_min
+
+
+def continent_needs_help(
+            player: object,
+            continent: Continent,
+            border_army_size_min: int = 20
+        ) -> bool:
+    if not continent.is_controlled_by(player):
+        return True
+
+    borders = continent.get_border_countries()
+
+    if borders is None:
+        return False
+
+    for b in borders:
+        if border_need_help(b, border_army_size_min):
+            return True
+
+    return False
 
 
 def get_cluster_borders(root: list[Country] | Country) -> list[Country] | None:

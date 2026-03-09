@@ -80,6 +80,23 @@ class Country:
         player = player if player else self.get_owner()
         return len(self.get_enemy_neighbors(player))
 
+    def get_number_of_enemy_neighbors_in_cont(
+                self,
+                continent: Continent,
+                player: object | None = None
+            ):
+        """
+            Returns the number of enemy neighbors of the country  in continet
+        """
+
+        player = player if player else self.get_owner()
+        countries = continent.get_countries()
+
+        return len([
+            n for n in self.get_enemy_neighbors(player)
+            if n in countries
+        ])
+
     def get_friendly_neighbors(self, player: object) -> list[Country]:
         """ Returns the list of friendly neighbors of the country """
         friendly_neighbors = []
@@ -159,6 +176,29 @@ class Continent:
             return self.reward
         return 0
 
+    def get_border_countries(self) \
+            -> list[Country] | None:
+
+        return [
+            c for c in self.countries
+            if any([n for n in c.get_neighbors() if n not in self.countries])
+        ]
+
+    def get_bordering_countries(self, player: object = None) \
+            -> list[Country] | None:
+
+        countries = []
+        for country in self.countries:
+            countries_to_add = [
+                n for n in country.get_neighbors()
+                if n not in self.countries and n not in countries and
+                (player is None or n.get_owner() is player)
+            ]
+
+            countries += countries_to_add
+
+        return countries
+
     def get_best_cluster(self, player: object) -> list[Country] | None:
         countries = self.get_owned_countries(player)
         cluster_size = 0
@@ -191,6 +231,19 @@ class Continent:
     def get_owned_army_size(self, player: object) -> int:
         """ Returns the army size on the map controlled by the player """
         countries = self.get_owned_countries(player)
+        owned = 0
+        for country in countries:
+            owned += country.get_army_size()
+
+        return owned
+
+    def get_enemy_army_size(self, player: object) -> int:
+        """ Returns the army size on the map not controlled by the player """
+        owned_countries = self.get_owned_countries(player)
+        countries = [
+            n for n in self.get_countries() if n not in owned_countries
+        ]
+
         owned = 0
         for country in countries:
             owned += country.get_army_size()
