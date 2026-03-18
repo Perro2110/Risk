@@ -62,6 +62,9 @@ class FortifyAction(Action):
               is placing {self.num_armies} troops in country \
               {self.to_country.get_name()} {self.to_country.get_army_size()}!")
 
+        if self.num_armies >= self.from_country.get_army_size() - 1:
+            self.num_armies = self.from_country.get_army_size() - 1
+
         self.from_country.set_army_size(
             self.from_country.get_army_size() - self.num_armies)
         self.to_country.set_army_size(
@@ -102,7 +105,7 @@ class AttackAction(Action):
         # dice (3 if they have 3+ armies, 2 if they have 2, 1 if they have 1).
         num_defenders = min(3, self.to_country.get_army_size())
 
-        # Classic Risk attack rules — roll dice for attackers and defenders
+        # Classic Risk attack rules - roll dice for attackers and defenders
         attack_rolls = sorted(
             [random.randint(1, 6) for _ in range(num_attackers)],
             reverse=True
@@ -118,6 +121,9 @@ class AttackAction(Action):
                 is attacking player {self.to_country.get_owner()} \
                 (country {self.to_country.get_name()} {num_defenders} \
                 out of {self.to_country.get_army_size()})!")
+
+        if num_defenders <= -1:
+            raise Exception()
 
         # Compare rolls and determine outcome
         for attacker_roll, defender_roll in zip(attack_rolls, defence_rolls):

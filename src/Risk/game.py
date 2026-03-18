@@ -1,6 +1,6 @@
 import random
 from Risk.map import Map
-from Risk.player import Player
+from Risk.players.base_player import Player
 from Risk.game_state import GameState
 from Risk.visualizer import RiskVisualizer
 from matplotlib import pyplot as plt
@@ -100,6 +100,7 @@ class Game:
 
             if action is not None:
                 result = action.execute()
+                player.action_cleanup()
 
                 if isinstance(result, bool):
                     player.has_won_last_attack = result
@@ -110,6 +111,7 @@ class Game:
                     plt.pause(0.1)
             else:
                 self.get_game_state().next_phase()
+                player.action_cleanup()
                 if self.get_game_state().get_phase() == GameState.PLACE_ARMY:
                     return
 

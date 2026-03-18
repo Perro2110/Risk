@@ -113,7 +113,7 @@ def continent_needs_help(
 
 def get_cluster_borders(root: list[Country] | Country) -> list[Country] | None:
     """
-    Returns the border countries of a cluster — countries that have at least
+    Returns the border countries of a cluster - countries that have at least
     one enemy neighbor.
 
     A cluster is a group of countries controlled by the same player. Border

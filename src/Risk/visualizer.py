@@ -339,30 +339,14 @@ class RiskVisualizer:
 
         colour_map: dict[str, str] = {
             p: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
-            for i, p in enumerate([p.color for p in gs.players])
+            for i, p in enumerate([
+                p.color for p in gs.players  # type: ignore
+            ])
         }
         gs_countries = {
             c.get_name(): c for c in gs.get_game_map().get_countries()
         }
         current_player = gs.get_current_player()
-
-        # -- edges ------------------------------------------------------------
-        # drawn: set[frozenset] = set()
-        # for t1, t2 in ADJACENCY:
-        #     key = frozenset((t1, t2))
-        #     if key in drawn:
-        #         continue
-        #     drawn.add(key)
-        #     if t1 not in TERRITORY_POS or t2 not in TERRITORY_POS:
-        #         continue
-        #     x1, y1 = TERRITORY_POS[t1]
-        #     x2, y2 = TERRITORY_POS[t2]
-        #     # Mark trans-oceanic routes with dashes
-        #     dx = abs(x1 - x2)
-        #     ls = (0, (5, 4)) if dx > 28 else "solid"
-        #     ax.plot([x1, x2], [y1, y2],
-        #             color=EDGE_COL, linewidth=0.9,
-        #             linestyle=ls, zorder=2, alpha=0.75)
 
         # -- nodes ------------------------------------------------------------
         R = 1.3  # node radius in data coords
@@ -376,7 +360,7 @@ class RiskVisualizer:
             owner = c.get_owner()
             armies = c.get_army_size() if c else 0
 
-            fill = colour_map.get(owner.color, NEUTRAL_COLOUR)
+            fill = colour_map.get(owner.color, NEUTRAL_COLOUR)  # type: ignore
             is_active = (owner == current_player and owner != "")
 
             # gold glow ring for current-player territories
@@ -408,7 +392,7 @@ class RiskVisualizer:
                               boxstyle="round,pad=0.2"))
 
         ax.set_title(
-            "◈  RISK — CLASSIC BOARD  ◈",
+            "◈  RISK - CLASSIC BOARD  ◈",
             color=TEXT_LIGHT, fontsize=12, fontweight="bold",
             pad=6, loc="center", fontfamily="monospace",
         )
@@ -423,7 +407,7 @@ class RiskVisualizer:
         game_map = gs.get_game_map()
         players = gs.get_players()
         colour_map = {
-            p.color: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
+            p.color: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]  # type: ignore
             for i, p in enumerate(players)
         }
         total = len(game_map.get_countries())
@@ -440,7 +424,7 @@ class RiskVisualizer:
 
         for i, player in enumerate(players):
             y_top = 0.935 - i * (card_h + gap)
-            col = colour_map[player.color]
+            col = colour_map[player.color]  # type: ignore
             owned = game_map.get_owned_countries(player)
             n_c = len(owned)
             n_a = sum(c.get_army_size() for c in owned)
@@ -467,7 +451,7 @@ class RiskVisualizer:
                         transform=ax.transAxes, zorder=4)
 
             mid = y_top - card_h / 2
-            ax.text(0.25, mid + 0.014, player,
+            ax.text(0.25, mid + 0.014, player,  # type: ignore
                     color=TEXT_LIGHT, ha="left", va="center",
                     fontsize=7.5, fontweight="bold",
                     transform=ax.transAxes)
@@ -548,10 +532,12 @@ class RiskVisualizer:
         cur = gs.get_phase()
         player = gs.get_current_player()
         p_col = PLAYER_COLOURS[
-            [p.color for p in gs.players].index(player.color) % len(PLAYER_COLOURS)
+            [
+                p.color for p in gs.players  # type: ignore
+            ].index(player.color) % len(PLAYER_COLOURS)  # type: ignore
         ]
 
-        ax.text(0.01, 0.5, f"  TURN ▶  {player.color}",
+        ax.text(0.01, 0.5, f"  TURN >  {player.color}",  # type: ignore
                 color=p_col, va="center",
                 fontsize=10, fontweight="bold",
                 transform=ax.transAxes)

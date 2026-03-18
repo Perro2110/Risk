@@ -41,7 +41,7 @@ The CSV has one row per country with the following columns:
 | `continent_reward` | Bonus armies for controlling the full continent |
 | `neighbors` | Semicolon separated list of adjacent country names |
 
-To add or edit countries, open `data/risk_map.csv` directly — no code changes needed.
+To add or edit countries, open `data/risk_map.csv` directly - no code changes needed.
 
 ## See:
   - https://refactoring.guru/design-patterns/state
