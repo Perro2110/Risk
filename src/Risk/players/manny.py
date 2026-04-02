@@ -4,7 +4,6 @@ import random
 import json
 import math
 from collections import defaultdict
-from typing import Any
 
 from Risk.actions import Action, PlaceArmyAction, FortifyAction
 from Risk.game_state import GameState
@@ -33,19 +32,19 @@ from Risk.players.base_player import Player
 #     weak learner a correggere l'errore residuo)
 # ---------------------------------------------------------------------------
 
-# ── costanti globali ────────────────────────────────────────────────────────
-N_TREES        = 12        # numero di alberi nell'ensemble
-TREE_DEPTH     = 4         # profondità massima di ogni albero
-LEARNING_RATE  = 0.15      # quanto velocemente aggiornare i pesi
+#  costanti globali
+N_TREES = 12        # numero di alberi nell'ensemble
+TREE_DEPTH = 4         # profondità massima di ogni albero
+LEARNING_RATE = 0.15      # quanto velocemente aggiornare i pesi
 PENALTY_FACTOR = 0.5       # penalità relativa per chi NON ha votato la scelta
-PRUNE_THRESH   = 0.01      # peso minimo prima del pruning
-PRUNE_EVERY    = 30        # rigenera alberi deboli ogni N partite
-EPSILON_START  = 0.25      # esplorazione iniziale
-EPSILON_MIN    = 0.04      # esplorazione minima
-EPSILON_DECAY  = 0.992     # moltiplicatore per partita
+PRUNE_THRESH = 0.01      # peso minimo prima del pruning
+PRUNE_EVERY = 30        # rigenera alberi deboli ogni N partite
+EPSILON_START = 0.25      # esplorazione iniziale
+EPSILON_MIN = 0.04      # esplorazione minima
+EPSILON_DECAY = 0.992     # moltiplicatore per partita
 
 
-# ── feature extractor ───────────────────────────────────────────────────────
+#  feature extractor
 class Features:
     """
     Calcola un vettore numerico normalizzato [0,1] dalla situazione di gioco.
@@ -67,58 +66,58 @@ class Features:
 
     @staticmethod
     def extract(player: "MENNY") -> list[float]:
-        gs  = player.game_state
-        gm  = gs.get_game_map()
-        all_c   = gm.get_countries()
-        owned   = gm.get_owned_countries(player)
+        gs = player.game_state
+        gm = gs.get_game_map()
+        all_c = gm.get_countries()
+        owned = gm.get_owned_countries(player)
 
         if not owned:
             return [0.0] * Features.N
 
         total_armies = sum(c.get_army_size() for c in all_c) or 1
-        own_armies   = sum(c.get_army_size() for c in owned) or 1
-        total_c      = len(all_c) or 1
+        own_armies = sum(c.get_army_size() for c in owned) or 1
+        total_c = len(all_c) or 1
 
-        borders      = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-        interior     = [c for c in owned if c.get_number_of_enemy_neighbors() == 0]
+        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
+        interior = [c for c in owned if c.get_number_of_enemy_neighbors() == 0]
 
         bp = (sum(c.get_number_of_enemy_neighbors() for c in borders) /
               (len(borders) * 6)) if borders else 0.0
 
         cont_prog_vals = []
         for cont in gm.get_continents():
-            cont_c    = cont.get_countries()
-            owned_in  = [c for c in cont_c if c in owned]
+            cont_c = cont.get_countries()
+            owned_in = [c for c in cont_c if c in owned]
             cont_prog_vals.append(len(owned_in) / (len(cont_c) or 1))
         cont_progress = sum(cont_prog_vals) / (len(cont_prog_vals) or 1)
 
         cont_bonus = gm.get_reward(player)
 
-        players     = gs.get_players()
-        alive       = [p for p in players
-                       if p is not player and len(gm.get_owned_countries(p)) > 0]
+        players = gs.get_players()
+        alive = [p for p in players
+                 if p is not player and len(gm.get_owned_countries(p)) > 0]
         enemy_ratio = min((len(alive) - 1) / 5, 1.0) if alive else 0.0
 
-        army_sizes  = [c.get_army_size() for c in owned]
-        avg_a       = own_armies / len(owned)
-        weakest_r   = min(army_sizes) / avg_a if avg_a else 0.0
+        army_sizes = [c.get_army_size() for c in owned]
+        avg_a = own_armies / len(owned)
+        weakest_r = min(army_sizes) / avg_a if avg_a else 0.0
         strongest_r = min(max(army_sizes) / avg_a, 3.0) / 3.0 if avg_a else 0.0
 
         return [
             min(own_armies / total_armies, 1.0),                  # 0
-            min(len(owned)  / total_c,     1.0),                  # 1
-            len(borders)  / len(owned),                           # 2
+            min(len(owned) / total_c,     1.0),                   # 1
+            len(borders) / len(owned),                            # 2
             min(bp, 1.0),                                         # 3
             cont_progress,                                        # 4
-            min(cont_bonus / 12.0, 1.0),                         # 5
+            min(cont_bonus / 12.0, 1.0),                          # 5
             max(enemy_ratio, 0.0),                                # 6
-            min(weakest_r,  2.0) / 2.0,                          # 7
+            min(weakest_r,  2.0) / 2.0,                           # 7
             strongest_r,                                          # 8
-            len(interior) / len(owned),                          # 9
+            len(interior) / len(owned),                           # 9
         ]
 
 
-# ── nodo dell'albero ────────────────────────────────────────────────────────
+#  nodo dell'albero
 class DTNode:
     """
     Nodo di un albero decisionale binario.
@@ -136,33 +135,36 @@ class DTNode:
         label: str | None = None,
     ):
         self.feature_idx = feature_idx
-        self.threshold   = threshold
-        self.left        = left
-        self.right       = right
-        self.label       = label   # None se nodo interno
+        self.threshold = threshold
+        self.left = left
+        self.right = right
+        self.label = label   # None se nodo interno
 
     @property
     def is_leaf(self) -> bool:
         return self.label is not None
 
-    def predict(self, features: list[float]) -> str:
+    def predict(self, features: list[float]) -> str | None:
         node = self
-        while not node.is_leaf:
+        while node is not None and not node.is_leaf:
+            if node.feature_idx is None:
+                break
+
             if features[node.feature_idx] <= node.threshold:
                 node = node.left
             else:
                 node = node.right
-        return node.label
+        return node.label if node else None
 
-    # ── serializzazione ──────────────────────────────────────────────────────
+    #  serializzazione
     def to_dict(self) -> dict:
         if self.is_leaf:
             return {"label": self.label}
         return {
             "fi": self.feature_idx,
             "th": self.threshold,
-            "l":  self.left.to_dict(),
-            "r":  self.right.to_dict(),
+            "l":  self.left.to_dict() if self.left else None,
+            "r":  self.right.to_dict() if self.right else None,
         }
 
     @staticmethod
@@ -177,7 +179,7 @@ class DTNode:
         )
 
 
-# ── costruzione casuale di un albero ────────────────────────────────────────
+#  costruzione casuale di un albero
 def _build_random_tree(
     macros: list[str],
     depth: int,
@@ -193,7 +195,7 @@ def _build_random_tree(
     if depth == 0:
         return DTNode(label=rng.choice(macros))
 
-    fi  = rng.randint(0, Features.N - 1)
+    fi = rng.randint(0, Features.N - 1)
     thr = round(rng.uniform(0.2, 0.8), 2)
     return DTNode(
         feature_idx=fi,
@@ -216,15 +218,15 @@ def _build_biased_tree(
     """
     if depth == 0:
         total = sum(bias.values()) or 1
-        r     = rng.random() * total
-        acc   = 0.0
+        r = rng.random() * total
+        acc = 0.0
         for m, w in bias.items():
             acc += w
             if r <= acc:
                 return DTNode(label=m)
         return DTNode(label=rng.choice(macros))
 
-    fi  = rng.randint(0, Features.N - 1)
+    fi = rng.randint(0, Features.N - 1)
     thr = round(rng.uniform(0.2, 0.8), 2)
     return DTNode(
         feature_idx=fi,
@@ -234,7 +236,7 @@ def _build_biased_tree(
     )
 
 
-# ── il player ───────────────────────────────────────────────────────────────
+#  il player
 class MENNY(Player):
     """
     Multiple ENsemble Neural-like strategY.
@@ -253,27 +255,27 @@ class MENNY(Player):
         troops_to_place truppe iniziali (come Player)
     """
 
-    PLACE_MACROS   = ["place_contested", "place_weakest", "place_continent"]
-    ATTACK_MACROS  = ["attack_easy", "attack_fill", "attack_consolidate",
-                      "attack_split", "attack_pass"]
+    PLACE_MACROS = ["place_contested", "place_weakest", "place_continent"]
+    ATTACK_MACROS = ["attack_easy", "attack_fill", "attack_consolidate",
+                     "attack_split", "attack_pass"]
     FORTIFY_MACROS = ["fortify_border", "fortify_pass"]
-    ALL_MACROS     = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
+    ALL_MACROS = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
 
     def __init__(
         self,
         color: str,
-        n_trees: int        = N_TREES,
-        depth: int          = TREE_DEPTH,
+        n_trees: int = N_TREES,
+        depth: int = TREE_DEPTH,
         learning_rate: float = LEARNING_RATE,
-        epsilon: float      = EPSILON_START,
+        epsilon: float = EPSILON_START,
         troops_to_place: int = 0,
     ):
         super().__init__(color, troops_to_place)
-        self._rng  = random.Random()          # RNG interno isolato
-        self.lr    = learning_rate
+        self._rng = random.Random()  # RNG interno isolato
+        self.lr = learning_rate
         self.epsilon = epsilon
         self.n_trees = n_trees
-        self.depth   = depth
+        self.depth = depth
 
         # ensemble: lista di (DTNode, weight)
         self._trees: list[DTNode] = [
@@ -283,19 +285,21 @@ class MENNY(Player):
         self._weights: list[float] = [1.0 / n_trees] * n_trees
 
         # bias accumulato per la rigenerazione (macro -> reward_sum)
-        self._macro_reward_acc: dict[str, float] = {m: 1.0 for m in self.ALL_MACROS}
+        self._macro_reward_acc: dict[str, float] = {
+            m: 1.0 for m in self.ALL_MACROS
+        }
 
         # memoria di transizione
-        self._prev_features:  list[float] | None = None
-        self._prev_macro:     str | None          = None
-        self._prev_countries: int                 = 0
-        self._prev_armies:    int                 = 0
-        self._prev_cont_bonus: float              = 0.0
+        self._prev_features:   list[float] | None = None
+        self._prev_macro:      str | None = None
+        self._prev_countries:  int = 0
+        self._prev_armies:     int = 0
+        self._prev_cont_bonus: float = 0.0
 
         self._cluster: list[Country] | None = None
-        self._games_played: int             = 0
+        self._games_played: int = 0
 
-    # ── ensemble predict ────────────────────────────────────────────────────
+    #  ensemble predict
     def _ensemble_vote(
         self,
         features: list[float],
@@ -321,7 +325,7 @@ class MENNY(Player):
         features = Features.extract(self)
         return self._ensemble_vote(features, candidates)
 
-    # ── aggiornamento pesi (core boosting online) ────────────────────────────
+    #  aggiornamento pesi (core boosting online)
     def _update_weights(self, macro: str, reward: float):
         """
         Update moltiplicativo stile AdaBoost/XGBoost online:
@@ -356,7 +360,7 @@ class MENNY(Player):
         total = sum(self._weights) or 1.0
         self._weights = [w / total for w in self._weights]
 
-    # ── pruning e rigenerazione alberi deboli ────────────────────────────────
+    #  pruning e rigenerazione alberi deboli
     def _maybe_prune_and_regrow(self):
         """
         Ogni PRUNE_EVERY partite, gli alberi con peso < PRUNE_THRESH vengono
@@ -377,7 +381,7 @@ class MENNY(Player):
         n_replaced = 0
         for i, (tree, w) in enumerate(zip(self._trees, self._weights)):
             if w < PRUNE_THRESH:
-                self._trees[i]   = _build_biased_tree(
+                self._trees[i] = _build_biased_tree(
                     self.ALL_MACROS, self.depth, self._rng, bias
                 )
                 self._weights[i] = 1.0 / self.n_trees
@@ -390,52 +394,52 @@ class MENNY(Player):
                 f"rigenerati {n_replaced} alberi deboli"
             )
 
-    # ── reward ───────────────────────────────────────────────────────────────
+    #  reward
     def _compute_reward(self) -> float:
-        gm          = self.game_state.get_game_map()
-        owned       = gm.get_owned_countries(self)
+        gm = self.game_state.get_game_map()
+        owned = gm.get_owned_countries(self)
         n_countries = len(owned)
-        n_armies    = gm.get_owned_army_size(self)
-        total_c     = len(gm.get_countries()) or 1
+        n_armies = gm.get_owned_army_size(self)
+        total_c = len(gm.get_countries()) or 1
 
-        delta_c    = (n_countries - self._prev_countries) * 2.0
-        delta_a    = (n_armies    - self._prev_armies)    * 0.3
-        dominance  = max((n_countries / total_c - 0.3) * 4.0, 0.0)
+        delta_c = (n_countries - self._prev_countries) * 2.0
+        delta_a = (n_armies - self._prev_armies) * 0.3
+        dominance = max((n_countries / total_c - 0.3) * 4.0, 0.0)
 
-        new_bonus   = gm.get_reward(self)
-        cont_gain   = (new_bonus - self._prev_cont_bonus) * 5.0
+        new_bonus = gm.get_reward(self)
+        cont_gain = (new_bonus - self._prev_cont_bonus) * 5.0
         self._prev_cont_bonus = new_bonus
 
-        borders       = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
+        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
         front_penalty = -len(borders) * 0.1
 
         self._prev_countries = n_countries
-        self._prev_armies    = n_armies
+        self._prev_armies = n_armies
 
         return delta_c + delta_a + dominance + cont_gain + front_penalty
 
-    # ── transizione ─────────────────────────────────────────────────────────
+    #  transizione
     def _record_transition(self):
         """Calcola reward e aggiorna i pesi dell'ensemble."""
-        reward   = self._compute_reward()
+        reward = self._compute_reward()
         features = Features.extract(self)
         if self._prev_macro is not None:
             self._update_weights(self._prev_macro, reward)
         self._prev_features = features
 
-    # ── lifecycle ────────────────────────────────────────────────────────────
+    #  lifecycle
     def turn_setup(self):
         self._cluster = None
         gm = self.game_state.get_game_map()
-        self._prev_countries  = len(gm.get_owned_countries(self))
-        self._prev_armies     = gm.get_owned_army_size(self)
+        self._prev_countries = len(gm.get_owned_countries(self))
+        self._prev_armies = gm.get_owned_army_size(self)
         self._prev_cont_bonus = gm.get_reward(self)
-        self._prev_features   = Features.extract(self)
+        self._prev_features = Features.extract(self)
 
     def action_cleanup(self):
         pass   # update avviene inline dopo ogni azione
 
-    # ── fasi di gioco ────────────────────────────────────────────────────────
+    #  fasi di gioco
     def place_armies(self) -> Action | None:
         macro = self._select_macro(self.PLACE_MACROS)
         self._prev_macro = macro
@@ -457,7 +461,7 @@ class MENNY(Player):
         self._record_transition()
         return action
 
-    # ── esecuzione macro: place ───────────────────────────────────────────────
+    #  esecuzione macro: place
     def _execute_place_macro(self, macro: str) -> Action | None:
         owned = self.game_state.get_game_map().get_owned_countries(self)
 
@@ -468,8 +472,10 @@ class MENNY(Player):
         target = None
 
         if macro == "place_contested":
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = utils.get_most_contested_country(borders, self)
+            borders = [
+                c for c in owned if c.get_number_of_enemy_neighbors() > 0
+            ]
+            target = utils.get_most_contested_country(borders, self)
 
         elif macro == "place_weakest":
             target = utils.get_weakest_friendly_country(self.game_state, self)
@@ -482,7 +488,7 @@ class MENNY(Player):
                 n_total = len(cont.get_countries()) or 1
                 progress = n_owned / n_total
                 # preferisci continenti quasi completati
-                val = progress * (1.0 + cont.get_army_reward() / 10.0)
+                val = progress * (1.0 + cont.get_reward(self) / 10.0)
                 if val > best_val:
                     best_val, best_cont = val, cont
             if best_cont:
@@ -492,9 +498,11 @@ class MENNY(Player):
 
         # fallback
         if target is None:
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = (utils.get_most_contested_country(borders, self)
-                       or (owned[0] if owned else None))
+            borders = [
+                c for c in owned if c.get_number_of_enemy_neighbors() > 0
+            ]
+            target = (utils.get_most_contested_country(borders, self)
+                      or (owned[0] if owned else None))
         if target is None:
             self.add_completed_phase(GameState.PLACE_ARMY)
             return None
@@ -502,13 +510,14 @@ class MENNY(Player):
         self.troops_to_place -= 1
         return PlaceArmyAction(target, 1)
 
-    # ── esecuzione macro: attack ───────────────────────────────────────────────
+    #  esecuzione macro: attack
     def _execute_attack_macro(self, macro: str) -> Action | None:
         if macro == "attack_pass":
             # penalità se c'erano attacchi disponibili
             if self._cluster:
                 feasible = any(
-                    c.get_army_size() > 1 and c.get_number_of_enemy_neighbors() > 0
+                    c.get_army_size() > 1
+                    and c.get_number_of_enemy_neighbors() > 0
                     for c in self._cluster
                 )
                 if feasible:
@@ -517,7 +526,8 @@ class MENNY(Player):
             return None
 
         if self._cluster is None:
-            self._cluster = self.game_state.get_game_map().get_owned_countries(self)
+            self._cluster = self.game_state.get_game_map() \
+                                .get_owned_countries(self)
 
         if macro == "attack_easy":
             action = self.attack_easy_expand(self._cluster)
@@ -537,14 +547,14 @@ class MENNY(Player):
         self.add_completed_phase(GameState.ATTACK)
         return None
 
-    # ── esecuzione macro: fortify ─────────────────────────────────────────────
+    #  esecuzione macro: fortify
     def _execute_fortify_macro(self, macro: str) -> Action | None:
         if macro == "fortify_pass":
             self.add_completed_phase(GameState.FORTIFY)
             return None
 
-        gm     = self.game_state.get_game_map()
-        owned  = gm.get_owned_countries(self)
+        gm = self.game_state.get_game_map()
+        owned = gm.get_owned_countries(self)
         borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
 
         if not borders:
@@ -557,7 +567,7 @@ class MENNY(Player):
             return None
 
         connected = target.get_connected_friendly_countries()
-        interior  = [
+        interior = [
             c for c in connected
             if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
         ]
@@ -567,7 +577,7 @@ class MENNY(Player):
             return None
 
         source = max(interior, key=lambda c: c.get_army_size())
-        n      = source.get_army_size() - 1
+        n = source.get_army_size() - 1
 
         if n <= 0:
             self.add_completed_phase(GameState.FORTIFY)
@@ -576,11 +586,12 @@ class MENNY(Player):
         self.add_completed_phase(GameState.FORTIFY)
         return FortifyAction(source, target, n)
 
-    # ── reward terminale ─────────────────────────────────────────────────────
+    #  reward terminale
     def receive_terminal_reward(self, won: bool):
         """
         Chiamare una volta a fine partita.
-        Applica un reward terminale grande, aggiorna epsilon e gestisce il pruning.
+        Applica un reward terminale grande, aggiorna epsilon
+        e gestisce il pruning.
         """
         reward = 50.0 if won else -25.0
         if self._prev_macro is not None:
@@ -599,7 +610,7 @@ class MENNY(Player):
             f"w_range=[{min(self._weights):.3f}, {max(self._weights):.3f}]"
         )
 
-    # ── persistenza ──────────────────────────────────────────────────────────
+    #  persistenza
     def save(self, filepath: str):
         """Salva ensemble, pesi e statistiche su JSON."""
         data = {
@@ -623,26 +634,26 @@ class MENNY(Player):
         """Carica un ensemble salvato."""
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-        self.n_trees          = data["n_trees"]
-        self.depth            = data["depth"]
-        self.lr               = data["learning_rate"]
-        self.epsilon          = data["epsilon"]
-        self._games_played    = data["games_played"]
-        self._weights         = data["weights"]
+        self.n_trees = data["n_trees"]
+        self.depth = data["depth"]
+        self.lr = data["learning_rate"]
+        self.epsilon = data["epsilon"]
+        self._games_played = data["games_played"]
+        self._weights = data["weights"]
         self._macro_reward_acc = data["macro_reward_acc"]
-        self._trees           = [DTNode.from_dict(d) for d in data["trees"]]
+        self._trees = [DTNode.from_dict(d) for d in data["trees"]]
         print(
             f"[MENNY {self.color}] caricato da {filepath} "
             f"({self.n_trees} alberi, {self._games_played} partite)"
         )
 
-    # ── debug / analisi ───────────────────────────────────────────────────────
+    #  debug / analisi
     def explain(self) -> str:
         """
         Ritorna una stringa leggibile che mostra il peso attuale di ogni albero
         e le macro più votate complessivamente.
         """
-        lines = [f"MENNY [{self.color}] — {self._games_played} partite giocate"]
+        lines = [f"MENNY [{self.color}] {self._games_played} partite giocate"]
         lines.append(f"epsilon = {self.epsilon:.3f}   lr = {self.lr}")
         lines.append("")
         lines.append("Pesi alberi:")
