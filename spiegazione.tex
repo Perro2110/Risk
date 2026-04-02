@@ -1,0 +1,44 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{hyperref}
+
+\title{Relazione Tecnica: Agente RLGA per il Gioco del RisiKo}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduzione}
+Si è scelto di sviluppare un agente intelligente (RLGA) per il gioco del RisiKo che sfrutta un approccio basato sull'evoluzione di comportamenti ad alto livello. Invece di calcolare il valore strategico di ogni singolo territorio sulla mappa, si è implementato un sistema guidato da un Algoritmo Genetico (GA) che ottimizza le preferenze strategiche generali dell'agente.
+
+\section{Architettura dell'Agente: Il Genoma e le Macro}
+Il processo decisionale dell'agente non si basa su reti neurali complesse, bensì su un "genoma" strutturato come un dizionario di pesi decimali.
+\begin{itemize}
+    \item \textbf{Macro-azioni:} Le meccaniche di gioco sono state suddivise nelle fasi classiche (Posizionamento, Attacco, Fortificazione), a ciascuna delle quali è stato associato un insieme di "macro", ovvero comportamenti tattici predefiniti (ad esempio \texttt{attack\_easy}, \texttt{place\_continent}, \texttt{attack\_split}).
+    \item \textbf{Il Genoma:} Ad ogni macro è assegnato un peso continuo, compreso tra -1.0 e 1.0, che ne rappresenta l'attrattiva strategica.
+    \item \textbf{Selezione Softmax:} Al momento di eseguire una mossa, l'agente non seleziona in modo deterministico l'azione con il peso maggiore. Si utilizza invece una funzione Softmax combinata con un parametro di temperatura. Questa tecnica converte i pesi in una distribuzione di probabilità, garantendo che il comportamento rimanga stocastico e imprevedibile, pur essendo ponderato e guidato dai valori ottimizzati dall'evoluzione.
+\end{itemize}
+
+\section{Addestramento: L'Algoritmo Genetico}
+Il processo di apprendimento è gestito da un algoritmo genetico con codifica a valori reali, articolato in diverse fasi progettate per simulare l'evoluzione naturale.
+\begin{itemize}
+    \item \textbf{Inizializzazione:} Si genera una popolazione iniziale di 30 individui dotati di genomi (pesi) casuali.
+    \item \textbf{Valutazione (Fitness):} La funzione di fitness valuta le prestazioni di ciascun individuo calcolandone il win-rate su un campione di 20 partite di prova (variabile \texttt{EVAL\_GAMES}). Gli incontri vengono disputati contro un pool di bot avversari predefiniti (Stinky, Pixie, Communist, Cluster, Angry).
+    \item \textbf{Elitismo:} Si applica una politica elitaria per preservare le strategie migliori; i 2 individui con la fitness più elevata passano inalterati alla generazione successiva.
+    \item \textbf{Selezione:} La scelta dei genitori per la riproduzione avviene tramite una selezione a torneo, confrontando la fitness di 3 individui estratti casualmente dalla popolazione.
+    \item \textbf{Crossover e Mutazione:} La generazione della prole utilizza un crossover uniforme, in cui ogni peso (gene) ha il 50\% di probabilità di essere ereditato da uno dei due genitori. Successivamente, si applica una mutazione gaussiana ai figli con una probabilità del 15\% e una deviazione standard di 0.3, al fine di mantenere la diversità genetica ed esplorare nuove combinazioni strategiche. L'intero ciclo evolutivo si ripete per un totale di 200 generazioni.
+\end{itemize}
+
+\section{Analisi della Generalizzazione della Strategia}
+Ci si è interrogati sulla possibilità di estrarre dal genoma finale una strategia universale in grado di garantire lo stesso rateo di vittorie registrato in fase di addestramento. L'analisi formale indica che non è possibile fornire tale garanzia a causa di specifici limiti strutturali e ambientali.
+\begin{itemize}
+    \item \textbf{Overfitting sugli Avversari:} L'algoritmo genetico ha ottimizzato i pesi specificamente per sconfiggere il set chiuso di bot hardcoded affrontati durante il training. Dinanzi a giocatori umani o ad agenti con logiche differenti, le vulnerabilità sfruttate con successo dalle macro potrebbero non presentarsi, rendendo la strategia sub-ottimale.
+    \item \textbf{Stocasticità del Modello:} A causa dell'implementazione della funzione Softmax per la selezione delle macro, le mosse mantengono un grado di casualità intrinseco, introducendo una varianza ineliminabile nelle singole partite.
+    \item \textbf{Campione di Valutazione Limitato:} Il parametro di 20 partite utilizzato per il calcolo della fitness durante l'addestramento non rappresenta un campione statisticamente sufficiente per definire un win-rate assoluto ed esente da forti oscillazioni dovute alla forte aleatorietà (lancio dei dadi) che governa il gioco del RisiKo.
+\end{itemize}
+In conclusione, sebbene il genoma finale non garantisca tassi di vittoria costanti in ambienti estranei a quelli di training, esso consente in ogni caso l'estrazione di solide euristiche e macro-strategie generali. Si pensi all'osservazione dei pesi per determinare oggettivamente se l'algoritmo abbia ritenuto più profittevole focalizzarsi sulla conquista continentale o sul consolidamento passivo.
+
+\end{document}
