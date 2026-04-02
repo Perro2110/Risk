@@ -65,6 +65,7 @@ class RLPH(Player):
             lambda: {m: 0.0 for m in self.ALL_MACROS}
         )
 
+        self._phase_macro: dict[int, str] = {}
         self._prev_state: tuple | None = None
         self._prev_macro: str | None = None
         self._prev_countries: int = 0
@@ -107,11 +108,21 @@ class RLPH(Player):
             ) / len(borders) if borders else 0.0
         )
 
+        players = self.game_state.get_players()
+        enemy_max_countries = max(
+            (
+                len(game_map.get_owned_countries(p))
+                for p in players if p is not self
+            ), default=1
+        )
+        threat = len(owned) / (enemy_max_countries or 1)
+
         return (
             _bucket(own_armies / total_armies,     [0.15, 0.30, 0.50, 0.70]),
             _bucket(len(owned) / total_countries,  [0.15, 0.30, 0.50, 0.70]),
             _bucket(continent_bonus,               [3, 6, 9, 12]),
             _bucket(border_pressure,               [1.0, 2.0, 3.0, 4.0]),
+            _bucket(threat,                        [0.5, 0.8, 1.2, 2.0]),
         )
 
     def _compute_reward(self) -> float:
@@ -119,16 +130,13 @@ class RLPH(Player):
         n_countries = len(game_map.get_owned_countries(self))
         n_armies = game_map.get_owned_army_size(self)
 
-        total_countries = len(game_map.get_countries()) or 1
-
-        delta_c = (n_countries - self._prev_countries) * 2.0
-        delta_a = (n_armies - self._prev_armies) * 0.5
-        dominance = max((n_countries / total_countries - 0.3) * 5.0, 0)
+        delta_c = (n_countries - self._prev_countries) * 3.0
+        delta_a = (n_armies - self._prev_armies) * 0.1
 
         self._prev_countries = n_countries
         self._prev_armies = n_armies
 
-        return delta_c + delta_a + dominance
+        return delta_c + delta_a
 
     def _update_q(self, reward: float, next_state: tuple):
         if self._prev_state is None or self._prev_macro is None:
@@ -209,19 +217,26 @@ class RLPH(Player):
             self._cluster = self.game_state.get_game_map()\
                 .get_owned_countries(self)
 
-        if macro == "attack_easy":
-            return self.attack_easy_expand(self._cluster)
-        if macro == "attack_fill":
-            return self.attack_fill_out(self._cluster)
-        if macro == "attack_consolidate":
-            return self.attack_consolidate(self._cluster)
-        if macro == "attack_split":
-            return self.attack_split_up(self._cluster, attack_ratio=1.2)
+        fallback_order = [macro, "attack_easy", "attack_fill",
+                          "attack_consolidate", "attack_split"]
+        seen = set()
+        for m in fallback_order:
+            if m in seen:
+                continue
+            seen.add(m)
+            if m == "attack_easy":
+                action = self.attack_easy_expand(self._cluster)
+            elif m == "attack_fill":
+                action = self.attack_fill_out(self._cluster)
+            elif m == "attack_consolidate":
+                action = self.attack_consolidate(self._cluster)
+            elif m == "attack_split":
+                action = self.attack_split_up(self._cluster, attack_ratio=1.2)
+            else:
+                continue
+            if action is not None:
+                return action
 
-        # fallback
-        action = self.attack_easy_expand(self._cluster)
-        if action:
-            return action
         self.add_completed_phase(GameState.ATTACK)
         return None
 
@@ -265,23 +280,35 @@ class RLPH(Player):
 
     def turn_setup(self):
         self._cluster = None
+        self._phase_macro: dict[int, str] = {}  # one macro decision per phase
         game_map = self.game_state.get_game_map()
         self._prev_countries = len(game_map.get_owned_countries(self))
         self._prev_armies = game_map.get_owned_army_size(self)
         self._prev_state = self._extract_state()
 
+    def _get_phase_macro(self, phase: int, candidates: list[str]) -> str:
+        """
+        Return the macro locked for this phase this turn.
+        Selects once at phase entry, then reuses for every subsequent call
+        within the same phase — so Q-updates are attributed to one decision,
+        not to dozens of individual army placements.
+        """
+        if phase not in self._phase_macro:
+            self._phase_macro[phase] = self._select_macro(candidates)
+        return self._phase_macro[phase]
+
     def place_armies(self) -> Action | None:
-        macro = self._select_macro(self.PLACE_MACROS)
+        macro = self._get_phase_macro(GameState.PLACE_ARMY, self.PLACE_MACROS)
         self._prev_macro = macro
         return self._execute_place_macro(macro)
 
     def attack(self) -> Action | None:
-        macro = self._select_macro(self.ATTACK_MACROS)
+        macro = self._get_phase_macro(GameState.ATTACK, self.ATTACK_MACROS)
         self._prev_macro = macro
         return self._execute_attack_macro(macro)
 
     def fortify(self) -> Action | None:
-        macro = self._select_macro(self.FORTIFY_MACROS)
+        macro = self._get_phase_macro(GameState.FORTIFY, self.FORTIFY_MACROS)
         self._prev_macro = macro
         return self._execute_fortify_macro(macro)
 
