@@ -1,5 +1,5 @@
 """
-train_menny.py - Training loop per MENNY.
+train_menny.py - Training loop per PPOPlayer.
 
 Lancialo dalla ROOT del progetto con:
 
@@ -33,7 +33,7 @@ from Risk.players.cluster import Cluster
 from Risk.players.communist import Communist
 from Risk.players.pixie import Pixie
 from Risk.players.stinky import Stinky
-from Risk.players.manny import MENNY
+from Risk.players.manny2 import PPOPlayer
 
 
 # ── config ──────────────────────────────────────────────────────────────────
@@ -47,9 +47,9 @@ LOG_LINES      = 16
 ALL_BOTS = [
     Pixie,
     Cluster,
-    Angry,
+    # Angry,
     Communist,
-    Stinky
+    # Stinky
 ]
 
 
@@ -78,7 +78,7 @@ def _wr_color(wr: float) -> str:
 def _stats_table(
     ep: int,
     wins: int,
-    agent: MENNY,
+    agent: PPOPlayer,
     bot_wins: dict[str, int],
 ) -> Table:
     t = Table.grid(padding=(0, 3))
@@ -93,17 +93,6 @@ def _stats_table(
     t.add_row(
         "Episodio",    f"{ep} / {NUM_EPISODES}",
         "Win-rate",    Text(f"{wr:.1f}%", style=wr_color),
-    )
-    t.add_row(
-        "MENNY wins",  str(wins),
-        "ε (epsilon)", f"{agent.epsilon:.3f}",
-    )
-
-    w_min = min(agent._weights)
-    w_max = max(agent._weights)
-    t.add_row(
-        "Peso min/max", f"{w_min:.3f} / {w_max:.3f}",
-        "Partite",      str(agent._games_played),
     )
 
     t.add_row("", "", "", "")
@@ -120,26 +109,10 @@ def _stats_table(
     return t
 
 
-def _macro_table(agent: MENNY) -> Table:
-    t = Table.grid(padding=(0, 2))
-    t.add_column(min_width=26)
-    t.add_column(min_width=8, justify="right")
-
-    items = sorted(
-        agent._macro_reward_acc.items(),
-        key=lambda x: -x[1],
-    )
-    for macro, val in items:
-        color = "green" if val > 0 else "red"
-        t.add_row(macro, Text(f"{val:+.2f}", style=color))
-
-    return t
-
-
 def _render(
     ep: int,
     wins: int,
-    agent: MENNY,
+    agent: PPOPlayer,
     bot_wins: dict[str, int],
     log: deque,
     progress: Progress,
@@ -158,13 +131,8 @@ def _render(
 
     layout["stats"].update(Panel(
         _stats_table(max(ep, 1), wins, agent, bot_wins),
-        title="[bold]MENNY Training[/bold]",
+        title="[bold]PPOPlayer Training[/bold]",
         border_style="blue",
-    ))
-    layout["macros"].update(Panel(
-        _macro_table(agent),
-        title="[dim]macro reward[/dim]",
-        border_style="dim",
     ))
     layout["bottom"].update(Panel(
         Text.from_markup("\n".join(log)),
@@ -180,12 +148,7 @@ def run_training():
     map_csv = _find_map_csv()
     console = Console()
 
-    agent = MENNY("menny")
-
-    # carica checkpoint se esiste
-    if os.path.exists(SAVE_PATH):
-        agent.load(SAVE_PATH)
-        console.print(f"[green]Checkpoint caricato da {SAVE_PATH}[/green]")
+    agent = PPOPlayer("ppop")
 
     wins = 0
     bot_wins: dict[str, int] = {b.__name__: 0 for b in ALL_BOTS}
@@ -207,7 +170,7 @@ def run_training():
         console=console,
         expand=True,
     )
-    task = progress.add_task("Training MENNY", total=NUM_EPISODES)
+    task = progress.add_task("Training PPOPlayer", total=NUM_EPISODES)
 
     with Live(
         _render(0, 0, agent, bot_wins, log, progress),
@@ -248,7 +211,7 @@ def run_training():
                 )
                 agent_won = best is agent
 
-            # reward terminale a MENNY
+            # reward terminale a PPOPlayer
             agent.receive_terminal_reward(agent_won)
 
             if agent_won:
@@ -264,27 +227,18 @@ def run_training():
                 wr = _win_rate(wins, ep)
                 result = "[green]WIN[/green]" if agent_won else "[red]loss[/red]"
                 log.append(
-                    f"ep {ep:>5}  ε={agent.epsilon:.3f}  wr={wr:.1f}%  "
+                    f"ep {ep:>5}  wr={wr:.1f}%  "
                     f"{result}  vs [{opp_str}]"
                 )
 
-            # salvataggio periodico
-            if ep % SAVE_EVERY == 0:
-                with contextlib.redirect_stdout(io.StringIO()):
-                    agent.save(SAVE_PATH)
-                log.append(f"[dim]  → salvato ({ep} ep)[/dim]")
-
             progress.advance(task)
             live.update(_render(ep, wins, agent, bot_wins, log, progress))
-
-    # salvataggio finale
-    agent.save(SAVE_PATH)
 
     # ── riepilogo finale ─────────────────────────────────────────────────────
     console.print()
     console.print("[bold]══ RISULTATI FINALI ══[/bold]")
     console.print(
-        f"  MENNY win-rate : [bold green]{_win_rate(wins, NUM_EPISODES):.1f}%[/bold green]"
+        f"  PPOPlayer win-rate : [bold green]{_win_rate(wins, NUM_EPISODES):.1f}%[/bold green]"
         f"  ({wins}/{NUM_EPISODES})"
     )
     console.print()
@@ -295,8 +249,6 @@ def run_training():
         console.print(f"    {name:<14} {Text(f'{bwr:.1f}%', style=color)}  ({bw}/{NUM_EPISODES})")
     console.print()
     console.print(f"  Ensemble salvato in [bold]{SAVE_PATH}[/bold]")
-
-    console.print(agent.explain())
 
 
 if __name__ == "__main__":

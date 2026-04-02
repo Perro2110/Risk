@@ -33,7 +33,7 @@ from Risk.players.base_player import Player
 # ---------------------------------------------------------------------------
 
 #  costanti globali
-N_TREES = 12        # numero di alberi nell'ensemble
+N_TREES = 100        # numero di alberi nell'ensemble
 TREE_DEPTH = 4         # profondità massima di ogni albero
 LEARNING_RATE = 0.15      # quanto velocemente aggiornare i pesi
 PENALTY_FACTOR = 0.5       # penalità relativa per chi NON ha votato la scelta
@@ -411,7 +411,7 @@ class MENNY(Player):
         self._prev_cont_bonus = new_bonus
 
         borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-        front_penalty = -len(borders) * 0.1
+        front_penalty = len(borders) * 0.1
 
         self._prev_countries = n_countries
         self._prev_armies = n_armies
@@ -603,12 +603,12 @@ class MENNY(Player):
         self._games_played += 1
         self._maybe_prune_and_regrow()
 
-        result = "WIN" if won else "loss"
-        print(
-            f"[MENNY {self.color}] partita {self._games_played} → {result} | "
-            f"ε={self.epsilon:.3f} | "
-            f"w_range=[{min(self._weights):.3f}, {max(self._weights):.3f}]"
-        )
+        # result = "WIN" if won else "loss"
+        # print(
+        #     f"[MENNY {self.color}] partita {self._games_played} → {result} | "
+        #     f"ε={self.epsilon:.3f} | "
+        #     f"w_range=[{min(self._weights):.3f}, {max(self._weights):.3f}]"
+        # )
 
     #  persistenza
     def save(self, filepath: str):
@@ -625,10 +625,10 @@ class MENNY(Player):
         }
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-        print(
-            f"[MENNY {self.color}] salvato in {filepath} "
-            f"({self.n_trees} alberi, {self._games_played} partite)"
-        )
+        # print(
+        #     f"[MENNY {self.color}] salvato in {filepath} "
+        #     f"({self.n_trees} alberi, {self._games_played} partite)"
+        # )
 
     def load(self, filepath: str):
         """Carica un ensemble salvato."""
@@ -642,10 +642,10 @@ class MENNY(Player):
         self._weights = data["weights"]
         self._macro_reward_acc = data["macro_reward_acc"]
         self._trees = [DTNode.from_dict(d) for d in data["trees"]]
-        print(
-            f"[MENNY {self.color}] caricato da {filepath} "
-            f"({self.n_trees} alberi, {self._games_played} partite)"
-        )
+        # print(
+        #     f"[MENNY {self.color}] caricato da {filepath} "
+        #     f"({self.n_trees} alberi, {self._games_played} partite)"
+        # )
 
     #  debug / analisi
     def explain(self) -> str:

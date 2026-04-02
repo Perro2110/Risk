@@ -45,9 +45,9 @@ from Risk.players.base_player import Player
 # ── costanti ────────────────────────────────────────────────────────────────
 ALPHA         = 0.1    # learning rate
 GAMMA         = 0.9    # discount factor
-EPSILON_START = 0.25   # esplorazione iniziale
-EPSILON_MIN   = 0.05   # floor esplorazione
-EPSILON_DECAY = 0.995  # moltiplicatore per partita  [FIX 4]
+EPSILON_START = 0.80   # esplorazione iniziale
+EPSILON_MIN   = 0.80   # floor esplorazione
+EPSILON_DECAY = 0      # moltiplicatore per partita  [FIX 4]
 
 # indici di fase — usati nel bucket dello stato  [FIX 1]
 PHASE_PLACE   = 0

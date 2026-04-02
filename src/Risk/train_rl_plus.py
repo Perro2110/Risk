@@ -16,6 +16,7 @@ import contextlib
 import glob
 import io
 import json
+import sys
 import os
 import random
 from collections import defaultdict, deque
@@ -39,12 +40,13 @@ from Risk.players.pixie import Pixie
 from Risk.players.communist import Communist
 from Risk.players.cluster import Cluster
 from Risk.players.angry import Angry
+from Risk.players.deepraph import DeepRLPH
 from Risk.players.rlph_plus import RLPHPlus
 
 # ── iperparametri ────────────────────────────────────────────────────────────
 NUM_EPISODES   = 5000
-GAME_LENGTH    = 100
-NUM_OPPONENTS  = 1          # un solo avversario per partita (come train_rl.py)
+GAME_LENGTH    = 300
+NUM_OPPONENTS  = 2          # un solo avversario per partita (come train_rl.py)
 ROLLING_WINDOW = 100        # finestra win-rate rolling per il best-checkpoint
 
 BEST_PATH  = "rl_best.json"
@@ -55,10 +57,10 @@ LOG_LINES  = 14
 
 # Avversari disponibili
 ALL_BOTS: list[type] = [
-    Stinky,
-    # Pixie,
-    # Communist,
-    # Cluster,
+    # RLPH,
+    Pixie,
+    Communist,
+    Cluster,
     # Angry,
 ]
 
@@ -171,7 +173,7 @@ def run_training():
     map_csv = _find_map_csv()
     console = Console()
 
-    agent = RLPHPlus("rl")
+    agent = DeepRLPH("rl")
 
     wins:          int              = 0
     history:       list[EpisodeStats] = []
@@ -205,7 +207,7 @@ def run_training():
 
             # ── scelta avversari ────────────────────────────────────────────
             bot_classes = random.sample(ALL_BOTS, k=min(NUM_OPPONENTS, len(ALL_BOTS)))
-            opponents   = [cls(cls.__name__.lower()) for cls in bot_classes]
+            opponents = [cls(cls.__name__.lower()) for cls in bot_classes]
 
             # ── costruzione partita ─────────────────────────────────────────
             game_map = Map.from_csv(map_csv)
@@ -215,9 +217,10 @@ def run_training():
             for opp in opponents:
                 game.add_player(opp)
 
+            seed = random.randrange(sys.maxsize)
             with contextlib.redirect_stdout(io.StringIO()), \
                  contextlib.redirect_stderr(io.StringIO()):
-                game.play(seed=None)
+                game.play(seed)
 
             # ── analisi risultato ───────────────────────────────────────────
             alive = game.get_alive_players()
