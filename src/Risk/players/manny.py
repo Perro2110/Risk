@@ -14,7 +14,7 @@ from Risk.players.base_player import Player
 
 
 # ---------------------------------------------------------------------------
-# MENNY — Multiple ENsemble Neural-like strategY
+# Menny
 # ---------------------------------------------------------------------------
 # Architettura: ensemble di N alberi decisionali binari (depth fissa).
 # Ogni albero è costruito su feature estratte dallo stato di gioco e
