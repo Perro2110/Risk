@@ -280,7 +280,7 @@ class RLPHPlus(Player):
                 owned_in  = [c for c in cont.get_countries() if c in owned]
                 n_total   = len(cont.get_countries()) or 1
                 progress  = len(owned_in) / n_total
-                val       = progress * (1.0 + cont.get_army_reward() / 10.0)
+                val       = progress * (1.0 + cont.get_reward(self) / 10.0)
                 if val > best_val:
                     best_val, best_cont = val, cont
             if best_cont:
@@ -390,11 +390,11 @@ class RLPHPlus(Player):
         self.epsilon = max(EPSILON_MIN, self.epsilon * EPSILON_DECAY)  # [FIX 4]
         self._games_played += 1
 
-        result = "WIN" if won else "loss"
-        print(
-            f"[RLPH+ {self.color}] partita {self._games_played} → {result} | "
-            f"ε={self.epsilon:.3f} | stati Q={len(self.Q)}"
-        )
+        #result = "WIN" if won else "loss"
+        #print(
+        #    f"[RLPH+ {self.color}] partita {self._games_played} → {result} | "
+        #    f"ε={self.epsilon:.3f} | stati Q={len(self.Q)}"
+        #)
 
     # ── persistenza ───────────────────────────────────────────────────────────
     def save(self, filepath: str):
