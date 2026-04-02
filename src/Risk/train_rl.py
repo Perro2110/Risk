@@ -32,6 +32,7 @@ from Risk.players.angry import Angry
 from Risk.players.cluster import Cluster
 from Risk.players.communist import Communist
 from Risk.players.pixie import Pixie
+from Risk.players.manny import MENNY    
 from Risk.players.rlph import RLPH
 from Risk.players.stinky import Stinky
 
@@ -47,7 +48,7 @@ LOG_LINES = 14
 
 EPSILON_DECAY = (EPSILON_START - EPSILON_END) / NUM_EPISODES
 
-ALL_BOTS = [Pixie, Cluster]
+ALL_BOTS = [Pixie] # , Cluster]
 BOT_WINS = [0] * len(ALL_BOTS)
 
 
