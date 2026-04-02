@@ -154,13 +154,14 @@ class Pixie(Player):
                                 weakest_en.get_number_of_enemy_neighbors(self):
                             num_armies_want_to_move_post_attack = 0
 
-                        return AttackAction(
+                        AttackAction(
                             c,
                             weakest_en,
                             num_armies_to_attack,
                             num_armies_want_to_move_post_attack
-                        )
+                        ).execute()
 
+        # TODO: check
         # self.attack_hog_wild()
         # self.attack_stalemate()
 

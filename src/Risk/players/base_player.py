@@ -88,14 +88,16 @@ class Player(ABC):
             .get_owned_army_size(self) > enemy_army_combined_size
 
     def attack_hog_wild(self) -> Action | None:
+        self.hog_wild_check()
         if self.is_attacking_hog_wild:
             self.attack_as_much_as_possible()
 
     def stalemate_check(self):
         self.is_stalemate = self.game_state.get_game_map() \
-            .get_owned_army_size(self) > 500
+            .get_owned_army_size(self) > 300
 
     def attack_stalemate(self) -> Action | None:
+        self.stalemate_check()
         if self.is_stalemate:
             self.attack_as_much_as_possible()
 
@@ -345,14 +347,62 @@ class Player(ABC):
             )
 
         # If we do not own any country in the continent kys
-        # TODO: not kys
+        # TODO: don't
         return None
 
+    def triple_attack_pack(self, root: Country) -> bool:
+        """
+        Run a combination of the three almost-always-helpful attacks on a
+        single country root.
+
+        Loops easy-expand until exhausted, runs one fill-out pass, then loops
+        consolidate until exhausted.
+
+        Returns:
+            True if at least one attack was won, False otherwise.
+        """
+        won = False
+
+        action = self.attack_easy_expand(root)
+        while action is not None and self.has_won_last_attack:
+            won = won or self.has_won_last_attack
+            action.execute()
+            action = self.attack_easy_expand(root)
+
+        self.attack_fill_out(root)
+        won = won or self.has_won_last_attack
+
+        action = self.attack_consolidate(root)
+        while action is not None and self.has_won_last_attack:
+            won = won or self.has_won_last_attack
+            action.execute()
+            action = self.attack_consolidate(root)
+
+        return won
+
     def attack_as_much_as_possible(self) -> Action | None:
+        """
+        Repeatedly attack with every owned country until no progress is made.
 
-        # TODO: add
+        Each pass iterates all owned countries, running `triple_attack_pack`
+        and `attack_split_up` (with a near-zero ratio) on each. Continues
+        until a full pass yields no successful attacks.
+        """
 
-        pass
+        attacked = True
+        while attacked:
+            attacked = False
+            owned_countries = self.game_state.get_game_map() \
+                .get_owned_countries(self)
+
+            for country in owned_countries:
+                if self.triple_attack_pack(country):
+                    attacked = True
+
+                action = self.attack_split_up([country], attack_ratio=0.01)
+                if action is not None:
+                    action.execute()
+                    attacked = True
 
     def add_completed_phase(self, phase: int):
         """Mark a phase as completed so it won't be re-entered this turn."""

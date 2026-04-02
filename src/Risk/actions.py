@@ -147,8 +147,13 @@ class AttackAction(Action):
                 (self.army_want_to_move + self.num_armies)
             )
             fortify_action.execute()
+            self.from_country.get_owner() \
+                .has_won_last_attack = True  # type: ignore
 
             # We return true so the game can update the player has won status
             return True
+
+        self.from_country.get_owner() \
+            .has_won_last_attack = True  # type: ignore
 
         return False

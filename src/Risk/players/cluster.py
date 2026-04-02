@@ -93,7 +93,7 @@ class Cluster(Player):
             if self.has_won_last_attack:
                 action = self.attack_easy_expand(borders)
                 if action is not None:
-                    return action
+                    action.execute()
             self.done_attack_step[0] = True
             self.has_won_last_attack = True
 
@@ -102,7 +102,7 @@ class Cluster(Player):
 
             action = self.attack_fill_out(borders)
             if action is not None:
-                return action
+                action.execute()
 
             self.has_won_last_attack = True
 
@@ -110,15 +110,15 @@ class Cluster(Player):
             if self.has_won_last_attack:
                 action = self.attack_easy_expand(borders)
                 if action is not None:
-                    return action
+                    action.execute()
             self.done_attack_step[2] = True
             self.has_won_last_attack = True
 
         if not self.done_attack_step[3]:
             if self.has_won_last_attack:
                 action = self.attack_consolidate(borders)
-                if action is not None:
-                    return action
+                if action:
+                    action.execute()
             self.done_attack_step[3] = True
             self.has_won_last_attack = True
 
@@ -126,7 +126,7 @@ class Cluster(Player):
             if self.has_won_last_attack:
                 action = self.attack_split_up(borders, 1)
                 if action is not None:
-                    return action
+                    action.execute()
             self.done_attack_step[4] = True
 
         self.add_completed_phase(GameState.ATTACK)
