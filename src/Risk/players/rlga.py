@@ -3,7 +3,6 @@ from __future__ import annotations
 import random
 import json
 import copy
-from collections import defaultdict
 from typing import Optional
 
 from Risk.actions import Action, PlaceArmyAction, FortifyAction
@@ -63,7 +62,9 @@ def _random_genome() -> dict[str, dict[str, float]]:
     }
 
 
-def _softmax_choice(weights: dict[str, float], temperature: float = 1.0) -> str:
+def _softmax_choice(
+            weights: dict[str, float], temperature: float = 1.0
+        ) -> str:
     """Selezione stocastica con softmax sui pesi."""
     import math
     keys = list(weights.keys())
@@ -104,22 +105,22 @@ class RLGA(Player):
         troops_to_place: int = 0,
     ):
         super().__init__(color, troops_to_place)
-        self.genome      = genome if genome is not None else _random_genome()
+        self.genome = genome if genome is not None else _random_genome()
         self.temperature = temperature
         self._cluster: list[Country] | None = None
 
-    # ── selezione macro ───────────────────────────────────────────────────────
+    #  selezione macro
     def _select_macro(self, phase: str) -> str:
         return _softmax_choice(self.genome[phase], self.temperature)
 
-    # ── lifecycle ─────────────────────────────────────────────────────────────
+    #  lifecycle
     def turn_setup(self):
         self._cluster = None
 
     def action_cleanup(self):
         pass
 
-    # ── fasi di gioco ─────────────────────────────────────────────────────────
+    #  fasi di gioco
     def place_armies(self) -> Action | None:
         macro = self._select_macro("place")
         return self._execute_place_macro(macro)
@@ -132,7 +133,7 @@ class RLGA(Player):
         macro = self._select_macro("fortify")
         return self._execute_fortify_macro(macro)
 
-    # ── esecuzione macro: place ───────────────────────────────────────────────
+    #  esecuzione macro: place
     def _execute_place_macro(self, macro: str) -> Action | None:
         owned = self.game_state.get_game_map().get_owned_countries(self)
 
@@ -143,8 +144,10 @@ class RLGA(Player):
         target = None
 
         if macro == "place_contested":
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = utils.get_most_contested_country(borders, self)
+            borders = [
+                c for c in owned if c.get_number_of_enemy_neighbors() > 0
+            ]
+            target = utils.get_most_contested_country(borders, self)
 
         elif macro == "place_weakest":
             target = utils.get_weakest_friendly_country(self.game_state, self)
@@ -153,9 +156,9 @@ class RLGA(Player):
             best_cont, best_val = None, -1.0
             for cont in self.game_state.get_game_map().get_continents():
                 owned_in = [c for c in cont.get_countries() if c in owned]
-                n_total  = len(cont.get_countries()) or 1
+                n_total = len(cont.get_countries()) or 1
                 progress = len(owned_in) / n_total
-                val      = progress * (1.0 + cont.get_reward(self) / 10.0)
+                val = progress * (1.0 + cont.get_reward(self) / 10.0)
                 if val > best_val:
                     best_val, best_cont = val, cont
             if best_cont:
@@ -164,8 +167,10 @@ class RLGA(Player):
                     return action
 
         if target is None:
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = (
+            borders = [
+                c for c in owned if c.get_number_of_enemy_neighbors() > 0
+            ]
+            target = (
                 utils.get_most_contested_country(borders, self)
                 or (owned[0] if owned else None)
             )
@@ -177,14 +182,15 @@ class RLGA(Player):
         self.troops_to_place -= 1
         return PlaceArmyAction(target, 1)
 
-    # ── esecuzione macro: attack ───────────────────────────────────────────────
+    #  esecuzione macro: attack
     def _execute_attack_macro(self, macro: str) -> Action | None:
         if macro == "attack_pass":
             self.add_completed_phase(GameState.ATTACK)
             return None
 
         if self._cluster is None:
-            self._cluster = self.game_state.get_game_map().get_owned_countries(self)
+            self._cluster = self.game_state.get_game_map() \
+                .get_owned_countries(self)
 
         if macro == "attack_easy":
             action = self.attack_easy_expand(self._cluster)
@@ -203,14 +209,14 @@ class RLGA(Player):
         self.add_completed_phase(GameState.ATTACK)
         return None
 
-    # ── esecuzione macro: fortify ─────────────────────────────────────────────
+    #  esecuzione macro: fortify
     def _execute_fortify_macro(self, macro: str) -> Action | None:
         if macro == "fortify_pass":
             self.add_completed_phase(GameState.FORTIFY)
             return None
 
-        gm      = self.game_state.get_game_map()
-        owned   = gm.get_owned_countries(self)
+        gm = self.game_state.get_game_map()
+        owned = gm.get_owned_countries(self)
         borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
 
         if not borders:
@@ -223,7 +229,7 @@ class RLGA(Player):
             return None
 
         connected = target.get_connected_friendly_countries()
-        interior  = [
+        interior = [
             c for c in connected
             if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
         ]
@@ -233,7 +239,7 @@ class RLGA(Player):
             return None
 
         source = max(interior, key=lambda c: c.get_army_size())
-        n      = source.get_army_size() - 1
+        n = source.get_army_size() - 1
 
         if n <= 0:
             self.add_completed_phase(GameState.FORTIFY)
@@ -242,7 +248,7 @@ class RLGA(Player):
         self.add_completed_phase(GameState.FORTIFY)
         return FortifyAction(source, target, n)
 
-    # ── persistenza ───────────────────────────────────────────────────────────
+    #  persistenza
     def save(self, filepath: str):
         data = {
             "genome":      self.genome,
@@ -255,20 +261,22 @@ class RLGA(Player):
     def load(self, filepath: str):
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-        self.genome      = data["genome"]
+        self.genome = data["genome"]
         self.temperature = data.get("temperature", 1.0)
         print(f"[RLGA {self.color}] caricato da {filepath}")
 
-    # ── debug ─────────────────────────────────────────────────────────────────
+    #  debug
     def explain(self) -> str:
-        lines = [f"RLGA [{self.color}] — temperature={self.temperature:.2f}", ""]
+        lines = [
+            f"RLGA [{self.color}] - temperature={self.temperature:.2f}", ""
+        ]
         for phase, macros in ALL_PHASES.items():
             weights = self.genome[phase]
-            best    = max(weights, key=weights.__getitem__)
+            best = max(weights, key=weights.__getitem__)
             lines.append(f"  {phase}:")
             for m in macros:
-                bar  = "█" * max(0, int((weights[m] + 1) * 10))
-                mark = " ◄ BEST" if m == best else ""
+                bar = "█" * max(0, int((weights[m] + 1) * 10))
+                mark = " <- BEST" if m == best else ""
                 lines.append(f"    {m:<28} {weights[m]:+.3f}  {bar}{mark}")
         return "\n".join(lines)
 
@@ -326,7 +334,9 @@ def tournament_select(
     fitnesses:  list[float],
     k:          int = 3,
 ) -> dict:
-    """Selezione torneo: prende k individui a caso e restituisce il migliore."""
-    indices  = random.sample(range(len(population)), k=min(k, len(population)))
+    """
+    Selezione torneo: prende k individui a caso e restituisce il migliore.
+    """
+    indices = random.sample(range(len(population)), k=min(k, len(population)))
     best_idx = max(indices, key=lambda i: fitnesses[i])
     return copy.deepcopy(population[best_idx])

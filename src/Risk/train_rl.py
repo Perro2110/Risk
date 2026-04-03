@@ -32,7 +32,7 @@ from Risk.players.angry import Angry
 from Risk.players.cluster import Cluster
 from Risk.players.communist import Communist
 from Risk.players.pixie import Pixie
-from Risk.players.manny import MENNY    
+from Risk.players.manny import MENNY
 from Risk.players.rlph import RLPH
 from Risk.players.stinky import Stinky
 
