@@ -57,7 +57,7 @@ GOLD = "#FFD700"
 
 
 # -----------------------------------------------------------------------------
-#  GEOGRAPHIC POSITIONS  (x: 0–100 = west→east,  y: 0–100 = south→north)
+#  GEOGRAPHIC POSITIONS  (x: 0–100 = west->east,  y: 0–100 = south->north)
 #  Hand-tuned to match the classic Risk board layout.
 # -----------------------------------------------------------------------------
 TERRITORY_POS: dict[str, tuple[float, float]] = {
@@ -135,7 +135,7 @@ ADJACENCY: list[tuple[str, str]] = [
     ("Western United States", "Eastern United States"),
     ("Western United States", "Central America"),
     ("Eastern United States", "Central America"),
-    # North America → South America
+    # North America -> South America
     ("Central America", "Venezuela"),
     # South America internal
     ("Venezuela", "Peru"),
@@ -143,7 +143,7 @@ ADJACENCY: list[tuple[str, str]] = [
     ("Peru", "Brazil"),
     ("Peru", "Argentina"),
     ("Brazil", "Argentina"),
-    # South America → Africa (trans-Atlantic)
+    # South America -> Africa (trans-Atlantic)
     ("Brazil", "North Africa"),
     # Europe internal
     ("Iceland", "Great Britain"),
@@ -200,7 +200,7 @@ ADJACENCY: list[tuple[str, str]] = [
     ("China", "Siam"),
     ("India", "Middle East"),
     ("India", "Siam"),
-    # Asia → Australia
+    # Asia -> Australia
     ("Siam", "Indonesia"),
     # Australia internal
     ("Indonesia", "New Guinea"),
@@ -503,11 +503,11 @@ class RiskVisualizer:
             if len(owners) == 1 and "" not in owners:
                 owner = next(iter(owners))
                 col = colour_map.get(owner, NEUTRAL_COLOUR)
-                lbl = f"● {cont_name[:12]}  +{reward}"
-                sub = f"  → {owner}"
+                lbl = f"- {cont_name[:12]}  +{reward}"
+                sub = f"  -> {owner}"
             else:
                 col = TEXT_DIM
-                lbl = f"○ {cont_name[:12]}  +{reward}"
+                lbl = f"- {cont_name[:12]}  +{reward}"
                 sub = "  contested"
             ax.text(0.06, cy, lbl, color=col, fontsize=5.5, va="top",
                     transform=ax.transAxes)

@@ -1,13 +1,13 @@
 """
-train_rlga.py — Training loop con Algoritmo Genetico per RLGA.
+train_rlga.py - Training loop con Algoritmo Genetico per RLGA.
 
 Lancialo dalla ROOT del progetto con:
     python -m Risk.train_rlga
 
 Output:
-    ga_best.json      — genoma del miglior individuo trovato
-    ga_last.json      — genoma dell'ultimo best (fine training)
-    ga_stats.json     — storico generazioni per analisi/plot
+    ga_best.json      - genoma del miglior individuo trovato
+    ga_last.json      - genoma dell'ultimo best (fine training)
+    ga_stats.json     - storico generazioni per analisi/plot
 
 Algoritmo:
     1. Inizializza popolazione casuale
@@ -52,7 +52,7 @@ from Risk.players.rlga import RLGA, _random_genome, crossover, mutate, tournamen
 
 # ── iperparametri GA ─────────────────────────────────────────────────────────
 POP_SIZE       = 30       # individui nella popolazione
-NUM_GENERATIONS = 200     # generazioni di evoluzione
+NUM_GENERATIONS = 20      # generazioni di evoluzione
 EVAL_GAMES     = 20       # partite per valutare la fitness di un individuo
 GAME_LENGTH    = 100      # lunghezza massima partita
 NUM_OPPONENTS  = 3        # avversari per partita
@@ -75,7 +75,7 @@ ALL_BOTS: list[type] = [
     Communist,
     Cluster,
     Angry,
-    ]
+]
 
 
 # ── struttura statistiche ─────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ def _render(gen: int, best_f: float, avg_f: float, overall_best: float,
     )
     layout["stats"].update(Panel(
         _stats_table(max(gen, 1), best_f, avg_f, overall_best, POP_SIZE),
-        title="[bold]RLGA — Algoritmo Genetico[/bold]", border_style="green",
+        title="[bold]RLGA - Algoritmo Genetico[/bold]", border_style="green",
     ))
     layout["log"].update(Panel(
         Text.from_markup("\n".join(log)),
@@ -334,11 +334,10 @@ def run_training():
 
     if overall_best_genome:
         console.print("\nGenoma migliore trovato:")
-        from Risk.players.rlga import ALL_PHASES
         for phase, weights in overall_best_genome.items():
             best_macro = max(weights, key=weights.__getitem__)
             console.print(f"\n  [bold]{phase}[/bold]:")
-            for macro in ALL_PHASES[phase]:
+            for macro in RLGA.ALL_PHASES[phase]:
                 bar  = "█" * max(0, int((weights[macro] + 3) * 5))
                 mark = " ◄" if macro == best_macro else ""
                 console.print(f"    {macro:<28} {weights[macro]:+.3f}  {bar}{mark}")

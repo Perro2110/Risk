@@ -9,7 +9,7 @@ from Risk.actions import Action, PlaceArmyAction, FortifyAction
 from Risk.game_state import GameState
 from Risk.map import Country
 from Risk import utils
-from Risk.players.base_player import Player
+from Risk.players.smart_player import SmartPlayer
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +237,7 @@ def _build_biased_tree(
 
 
 #  il player
-class MENNY(Player):
+class MENNY(SmartPlayer):
     """
     Multiple ENsemble Neural-like strategY.
 
@@ -254,12 +254,6 @@ class MENNY(Player):
         epsilon         esplorazione iniziale            (default 0.25)
         troops_to_place truppe iniziali (come Player)
     """
-
-    PLACE_MACROS = ["place_contested", "place_weakest", "place_continent"]
-    ATTACK_MACROS = ["attack_easy", "attack_fill", "attack_consolidate",
-                     "attack_split", "attack_pass"]
-    FORTIFY_MACROS = ["fortify_border", "fortify_pass"]
-    ALL_MACROS = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
 
     def __init__(
         self,
@@ -429,7 +423,7 @@ class MENNY(Player):
 
     #  lifecycle
     def turn_setup(self):
-        self._cluster = None
+        super().turn_setup()
         gm = self.game_state.get_game_map()
         self._prev_countries = len(gm.get_owned_countries(self))
         self._prev_armies = gm.get_owned_army_size(self)
@@ -460,131 +454,6 @@ class MENNY(Player):
         action = self._execute_fortify_macro(macro)
         self._record_transition()
         return action
-
-    #  esecuzione macro: place
-    def _execute_place_macro(self, macro: str) -> Action | None:
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-
-        if self.troops_to_place <= 0:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        target = None
-
-        if macro == "place_contested":
-            borders = [
-                c for c in owned if c.get_number_of_enemy_neighbors() > 0
-            ]
-            target = utils.get_most_contested_country(borders, self)
-
-        elif macro == "place_weakest":
-            target = utils.get_weakest_friendly_country(self.game_state, self)
-
-        elif macro == "place_continent":
-            best_cont, best_val = None, -1.0
-            for cont in self.game_state.get_game_map().get_continents():
-                n_owned = len([c for c in cont.get_countries()
-                               if c in owned])
-                n_total = len(cont.get_countries()) or 1
-                progress = n_owned / n_total
-                # preferisci continenti quasi completati
-                val = progress * (1.0 + cont.get_reward(self) / 10.0)
-                if val > best_val:
-                    best_val, best_cont = val, cont
-            if best_cont:
-                action = self.place_to_take_continent(best_cont)
-                if action:
-                    return action
-
-        # fallback
-        if target is None:
-            borders = [
-                c for c in owned if c.get_number_of_enemy_neighbors() > 0
-            ]
-            target = (utils.get_most_contested_country(borders, self)
-                      or (owned[0] if owned else None))
-        if target is None:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        self.troops_to_place -= 1
-        return PlaceArmyAction(target, 1)
-
-    #  esecuzione macro: attack
-    def _execute_attack_macro(self, macro: str) -> Action | None:
-        if macro == "attack_pass":
-            # penalità se c'erano attacchi disponibili
-            if self._cluster:
-                feasible = any(
-                    c.get_army_size() > 1
-                    and c.get_number_of_enemy_neighbors() > 0
-                    for c in self._cluster
-                )
-                if feasible:
-                    self._update_weights("attack_pass", -1.0)
-            self.add_completed_phase(GameState.ATTACK)
-            return None
-
-        if self._cluster is None:
-            self._cluster = self.game_state.get_game_map() \
-                                .get_owned_countries(self)
-
-        if macro == "attack_easy":
-            action = self.attack_easy_expand(self._cluster)
-        elif macro == "attack_fill":
-            action = self.attack_fill_out(self._cluster)
-        elif macro == "attack_consolidate":
-            action = self.attack_consolidate(self._cluster)
-        elif macro == "attack_split":
-            action = self.attack_split_up(self._cluster, attack_ratio=1.2)
-        else:
-            action = self.attack_easy_expand(self._cluster)
-
-        if action:
-            return action
-
-        # nessuna mossa disponibile → fine attacco
-        self.add_completed_phase(GameState.ATTACK)
-        return None
-
-    #  esecuzione macro: fortify
-    def _execute_fortify_macro(self, macro: str) -> Action | None:
-        if macro == "fortify_pass":
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        gm = self.game_state.get_game_map()
-        owned = gm.get_owned_countries(self)
-        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-
-        if not borders:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        target = utils.get_most_contested_country(borders, self)
-        if not target:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        connected = target.get_connected_friendly_countries()
-        interior = [
-            c for c in connected
-            if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
-        ]
-
-        if not interior:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        source = max(interior, key=lambda c: c.get_army_size())
-        n = source.get_army_size() - 1
-
-        if n <= 0:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        self.add_completed_phase(GameState.FORTIFY)
-        return FortifyAction(source, target, n)
 
     #  reward terminale
     def receive_terminal_reward(self, won: bool):

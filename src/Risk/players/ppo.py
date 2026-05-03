@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import random
 import math
-from collections import defaultdict
 
 from Risk.actions import Action, PlaceArmyAction, FortifyAction
 from Risk.game_state import GameState
-from Risk.players.base_player import Player
+from Risk.players.smart_player import SmartPlayer
 from Risk import utils
 
 
@@ -69,14 +68,7 @@ class Features:
 # =========================================================
 # PPO PLAYER
 # =========================================================
-class PPOPlayer(Player):
-
-    PLACE_MACROS = ["place_contested", "place_weakest", "place_continent"]
-    ATTACK_MACROS = ["attack_easy", "attack_fill", "attack_consolidate",
-                     "attack_split", "attack_pass"]
-    FORTIFY_MACROS = ["fortify_border", "fortify_pass"]
-
-    ALL_MACROS = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
+class PPOPlayer(SmartPlayer):
 
     def __init__(self, color: str):
         super().__init__(color)
@@ -225,96 +217,24 @@ class PPOPlayer(Player):
     # =========================================================
     def place_armies(self) -> Action | None:
         macro = self._choose_macro(self.PLACE_MACROS)
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-
-        if self.troops_to_place <= 0 or not owned:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        if macro == "place_weakest":
-            target = utils.get_weakest_friendly_country(self.game_state, self)
-
-        elif macro == "place_contested":
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target = utils.get_most_contested_country(borders, self)
-
-        else:
-            target = owned[0]
-
-        if target is None:
-            target = owned[0]
-
-        self.troops_to_place -= 1
-        return PlaceArmyAction(target, 1)
+        action = self._execute_place_macro(macro)
+        return action
 
     # =========================================================
     # ATTACK
     # =========================================================
     def attack(self) -> Action | None:
         macro = self._choose_macro(self.ATTACK_MACROS)
-
-        if self._cluster is None:
-            self._cluster = self.game_state.get_game_map().get_owned_countries(self)
-
-        if macro == "attack_easy":
-            action = self.attack_easy_expand(self._cluster)
-        elif macro == "attack_fill":
-            action = self.attack_fill_out(self._cluster)
-        elif macro == "attack_consolidate":
-            action = self.attack_consolidate(self._cluster)
-        elif macro == "attack_split":
-            action = self.attack_split_up(self._cluster, attack_ratio=1.2)
-        else:
-            action = None
-
-        if action:
-            return action
-
-        self.add_completed_phase(GameState.ATTACK)
-        return None
+        action = self._execute_attack_macro(macro)
+        return action
 
     # =========================================================
     # FORTIFY
     # =========================================================
     def fortify(self) -> Action | None:
         macro = self._choose_macro(self.FORTIFY_MACROS)
-
-        if macro == "fortify_pass":
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        gm = self.game_state.get_game_map()
-        owned = gm.get_owned_countries(self)
-
-        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-
-        if not borders:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        target = utils.get_most_contested_country(borders, self)
-        if not target:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        interior = [
-            c for c in target.get_connected_friendly_countries()
-            if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
-        ]
-
-        if not interior:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        source = max(interior, key=lambda c: c.get_army_size())
-        n = source.get_army_size() - 1
-
-        if n <= 0:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        self.add_completed_phase(GameState.FORTIFY)
-        return FortifyAction(source, target, n)
+        action = self._execute_fortify_macro(macro)
+        return action
 
     # =========================================================
     # END GAME

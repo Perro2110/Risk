@@ -33,7 +33,7 @@ from Risk.players.cluster import Cluster
 from Risk.players.communist import Communist
 from Risk.players.pixie import Pixie
 from Risk.players.stinky import Stinky
-from Risk.players.manny2 import PPOPlayer
+from Risk.players.ppo import PPOPlayer
 
 
 # ── config ──────────────────────────────────────────────────────────────────

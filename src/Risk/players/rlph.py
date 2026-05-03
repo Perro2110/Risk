@@ -2,14 +2,13 @@ from __future__ import annotations
 import random
 import json
 from collections import defaultdict
-from Risk.actions import Action, PlaceArmyAction, FortifyAction
+from Risk.actions import Action
 from Risk.game_state import GameState
 from Risk.map import Country
-from Risk import utils
-from Risk.players.base_player import Player
+from Risk.players.smart_player import SmartPlayer
 
 
-class RLPH(Player):
+class RLPH(SmartPlayer):
     """
     Risk Learning PowerHouse. (0% winrate btw) TODO: change accordingly
     Player che impara a giocare a Risk tramite Q-learning tabulare.
@@ -25,27 +24,6 @@ class RLPH(Player):
         epsilon: tasso di esplorazione epsilon-greedy (default 0.2)
                  metti 0.0 per usare solo la Q-table appresa
     """
-
-    PLACE_MACROS = [
-        "place_contested",   # rinforza il confine più conteso
-        "place_weakest",     # rinforza il paese più debole
-        "place_continent",   # rinforza il continente più promettente
-    ]
-
-    ATTACK_MACROS = [
-        "attack_easy",         # espandi dove sei sicuro di vincere
-        "attack_fill",         # elimina isole nemiche circondate
-        "attack_consolidate",  # riduci i fronti aperti
-        "attack_split",        # attacca in più direzioni contemporaneamente
-        "attack_pass",         # passa (fine fase attacco)
-    ]
-
-    FORTIFY_MACROS = [
-        "fortify_border",    # sposta truppe verso il confine più esposto
-        "fortify_pass",      # passa
-    ]
-
-    ALL_MACROS = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
 
     def __init__(
         self,
@@ -165,121 +143,8 @@ class RLPH(Player):
         q_vals = {m: self.Q[state][m] for m in candidates}
         return max(q_vals, key=q_vals.__getitem__)
 
-    def _execute_place_macro(self, macro: str) -> Action | None:
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-
-        if self.troops_to_place <= 0:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        target = None
-
-        if macro == "place_contested":
-            borders = [
-                c for c in owned if c.get_number_of_enemy_neighbors() > 0
-            ]
-            target = utils.get_most_contested_country(borders, self)
-
-        elif macro == "place_weakest":
-            target = utils.get_weakest_friendly_country(self.game_state, self)
-
-        elif macro == "place_continent":
-            best_cont, best_val = None, -1.0
-            for cont in self.game_state.get_game_map().get_continents():
-                val = cont.get_owned_army_size(self) \
-                    / (cont.get_enemy_army_size(self) or 1)
-                if val > best_val:
-                    best_val, best_cont = val, cont
-            if best_cont:
-                action = self.place_to_take_continent(best_cont)
-                if action:
-                    return action
-
-        # fallback generico se la macro non ha trovato un target
-        if target is None:
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors()]
-            target = utils.get_most_contested_country(borders, self) \
-                or (owned[0] if owned else None)
-
-        if target is None:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        self.troops_to_place -= 1
-        return PlaceArmyAction(target, 1)
-
-    def _execute_attack_macro(self, macro: str) -> Action | None:
-        if macro == "attack_pass":
-            self.add_completed_phase(GameState.ATTACK)
-            return None
-
-        if self._cluster is None:
-            self._cluster = self.game_state.get_game_map()\
-                .get_owned_countries(self)
-
-        fallback_order = [macro, "attack_easy", "attack_fill",
-                          "attack_consolidate", "attack_split"]
-        seen = set()
-        for m in fallback_order:
-            if m in seen:
-                continue
-            seen.add(m)
-            if m == "attack_easy":
-                action = self.attack_easy_expand(self._cluster)
-            elif m == "attack_fill":
-                action = self.attack_fill_out(self._cluster)
-            elif m == "attack_consolidate":
-                action = self.attack_consolidate(self._cluster)
-            elif m == "attack_split":
-                action = self.attack_split_up(self._cluster, attack_ratio=1.2)
-            else:
-                continue
-            if action is not None:
-                return action
-
-        self.add_completed_phase(GameState.ATTACK)
-        return None
-
-    def _execute_fortify_macro(self, macro: str) -> Action | None:
-        if macro == "fortify_pass":
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-
-        if not borders:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        target = utils.get_most_contested_country(borders, self)
-
-        if not target:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        connected = target.get_connected_friendly_countries()
-        interior = [
-            c for c in connected if c.get_number_of_enemy_neighbors() == 0
-            and c.get_army_size() > 1
-        ]
-
-        if not interior:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        source = max(interior, key=lambda c: c.get_army_size())
-        n = source.get_army_size() - 1
-
-        if n <= 0:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        self.add_completed_phase(GameState.FORTIFY)
-        return FortifyAction(source, target, n)
-
     def turn_setup(self):
-        self._cluster = None
+        super().turn_setup()
         self._phase_macro: dict[int, str] = {}  # one macro decision per phase
         game_map = self.game_state.get_game_map()
         self._prev_countries = len(game_map.get_owned_countries(self))
@@ -290,7 +155,7 @@ class RLPH(Player):
         """
         Return the macro locked for this phase this turn.
         Selects once at phase entry, then reuses for every subsequent call
-        within the same phase — so Q-updates are attributed to one decision,
+        within the same phase - so Q-updates are attributed to one decision,
         not to dozens of individual army placements.
         """
         if phase not in self._phase_macro:

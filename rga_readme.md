@@ -8,7 +8,7 @@
 
 **Architettura GA:**
 
-Il **genoma** è un dizionario `{fase → {macro → peso_float}}` — niente Q-table, niente aggiornamenti online. Ogni individuo è una strategia fissa.
+Il **genoma** è un dizionario `{fase → {macro → peso_float}}` - niente Q-table, niente aggiornamenti online. Ogni individuo è una strategia fissa.
 
 La **selezione macro** usa softmax sui pesi invece di greedy, quindi rimane stocastica ma proporzionale a ciò che l'evoluzione ha premiato.
 

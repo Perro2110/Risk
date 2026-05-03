@@ -9,11 +9,11 @@ from Risk.actions import Action, PlaceArmyAction, FortifyAction
 from Risk.game_state import GameState
 from Risk.map import Country
 from Risk import utils
-from Risk.players.base_player import Player
+from Risk.players.smart_player import SmartPlayer
 
 
 # ---------------------------------------------------------------------------
-# RLGA — Risk Learning con Algoritmo Genetico
+# RLGA - Risk Learning con Algoritmo Genetico
 # ---------------------------------------------------------------------------
 # Invece di Q-learning, ogni agente ha un GENOMA:
 #   un dizionario  {fase: {macro: peso_float}}
@@ -28,39 +28,6 @@ from Risk.players.base_player import Player
 #   4. mutazione gaussiana
 #   5. élitismo: il best sopravvive sempre
 # ---------------------------------------------------------------------------
-
-# Macro disponibili per fase
-PLACE_MACROS = [
-    "place_contested",
-    "place_weakest",
-    "place_continent",
-]
-ATTACK_MACROS = [
-    "attack_easy",
-    "attack_fill",
-    "attack_consolidate",
-    "attack_split",
-    "attack_pass",
-]
-FORTIFY_MACROS = [
-    "fortify_border",
-    "fortify_pass",
-]
-
-ALL_PHASES = {
-    "place":   PLACE_MACROS,
-    "attack":  ATTACK_MACROS,
-    "fortify": FORTIFY_MACROS,
-}
-
-
-def _random_genome() -> dict[str, dict[str, float]]:
-    """Genoma casuale con pesi in [-1, 1]."""
-    return {
-        phase: {macro: random.uniform(-1.0, 1.0) for macro in macros}
-        for phase, macros in ALL_PHASES.items()
-    }
-
 
 def _softmax_choice(
             weights: dict[str, float], temperature: float = 1.0
@@ -81,8 +48,14 @@ def _softmax_choice(
             return key
     return keys[-1]
 
+def _random_genome() -> dict[str, dict[str, float]]:
+    """Genoma casuale con pesi in [-1, 1]."""
+    return {
+        phase: {macro: random.uniform(-1.0, 1.0) for macro in macros}
+        for phase, macros in SmartPlayer.ALL_PHASES.items()
+    }
 
-class RLGA(Player):
+class RLGA(SmartPlayer):
     """
     Agente Risk con comportamento guidato da un GENOMA evolutivo.
 
@@ -133,121 +106,6 @@ class RLGA(Player):
         macro = self._select_macro("fortify")
         return self._execute_fortify_macro(macro)
 
-    #  esecuzione macro: place
-    def _execute_place_macro(self, macro: str) -> Action | None:
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-
-        if self.troops_to_place <= 0:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        target = None
-
-        if macro == "place_contested":
-            borders = [
-                c for c in owned if c.get_number_of_enemy_neighbors() > 0
-            ]
-            target = utils.get_most_contested_country(borders, self)
-
-        elif macro == "place_weakest":
-            target = utils.get_weakest_friendly_country(self.game_state, self)
-
-        elif macro == "place_continent":
-            best_cont, best_val = None, -1.0
-            for cont in self.game_state.get_game_map().get_continents():
-                owned_in = [c for c in cont.get_countries() if c in owned]
-                n_total = len(cont.get_countries()) or 1
-                progress = len(owned_in) / n_total
-                val = progress * (1.0 + cont.get_reward(self) / 10.0)
-                if val > best_val:
-                    best_val, best_cont = val, cont
-            if best_cont:
-                action = self.place_to_take_continent(best_cont)
-                if action:
-                    return action
-
-        if target is None:
-            borders = [
-                c for c in owned if c.get_number_of_enemy_neighbors() > 0
-            ]
-            target = (
-                utils.get_most_contested_country(borders, self)
-                or (owned[0] if owned else None)
-            )
-
-        if target is None:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        self.troops_to_place -= 1
-        return PlaceArmyAction(target, 1)
-
-    #  esecuzione macro: attack
-    def _execute_attack_macro(self, macro: str) -> Action | None:
-        if macro == "attack_pass":
-            self.add_completed_phase(GameState.ATTACK)
-            return None
-
-        if self._cluster is None:
-            self._cluster = self.game_state.get_game_map() \
-                .get_owned_countries(self)
-
-        if macro == "attack_easy":
-            action = self.attack_easy_expand(self._cluster)
-        elif macro == "attack_fill":
-            action = self.attack_fill_out(self._cluster)
-        elif macro == "attack_consolidate":
-            action = self.attack_consolidate(self._cluster)
-        elif macro == "attack_split":
-            action = self.attack_split_up(self._cluster, attack_ratio=1.2)
-        else:
-            action = self.attack_easy_expand(self._cluster)
-
-        if action:
-            return action
-
-        self.add_completed_phase(GameState.ATTACK)
-        return None
-
-    #  esecuzione macro: fortify
-    def _execute_fortify_macro(self, macro: str) -> Action | None:
-        if macro == "fortify_pass":
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        gm = self.game_state.get_game_map()
-        owned = gm.get_owned_countries(self)
-        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-
-        if not borders:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        target = utils.get_most_contested_country(borders, self)
-        if not target:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        connected = target.get_connected_friendly_countries()
-        interior = [
-            c for c in connected
-            if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
-        ]
-
-        if not interior:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        source = max(interior, key=lambda c: c.get_army_size())
-        n = source.get_army_size() - 1
-
-        if n <= 0:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        self.add_completed_phase(GameState.FORTIFY)
-        return FortifyAction(source, target, n)
-
     #  persistenza
     def save(self, filepath: str):
         data = {
@@ -270,7 +128,7 @@ class RLGA(Player):
         lines = [
             f"RLGA [{self.color}] - temperature={self.temperature:.2f}", ""
         ]
-        for phase, macros in ALL_PHASES.items():
+        for phase, macros in self.ALL_PHASES.items():
             weights = self.genome[phase]
             best = max(weights, key=weights.__getitem__)
             lines.append(f"  {phase}:")
@@ -282,7 +140,7 @@ class RLGA(Player):
 
 
 # ---------------------------------------------------------------------------
-# Funzioni genetiche — usate da train_rlga.py
+# Funzioni genetiche - usate da train_rlga.py
 # ---------------------------------------------------------------------------
 
 def crossover(genome_a: dict, genome_b: dict) -> tuple[dict, dict]:
@@ -293,10 +151,10 @@ def crossover(genome_a: dict, genome_b: dict) -> tuple[dict, dict]:
     """
     child1: dict = {}
     child2: dict = {}
-    for phase in ALL_PHASES:
+    for phase in SmartPlayer.ALL_PHASES:
         child1[phase] = {}
         child2[phase] = {}
-        for macro in ALL_PHASES[phase]:
+        for macro in SmartPlayer.ALL_PHASES[phase]:
             if random.random() < 0.5:
                 child1[phase][macro] = genome_a[phase][macro]
                 child2[phase][macro] = genome_b[phase][macro]
@@ -319,9 +177,9 @@ def mutate(
     I pesi vengono clampati in [-clip, +clip].
     """
     new_genome: dict = {}
-    for phase in ALL_PHASES:
+    for phase in SmartPlayer.ALL_PHASES:
         new_genome[phase] = {}
-        for macro in ALL_PHASES[phase]:
+        for macro in SmartPlayer.ALL_PHASES[phase]:
             w = genome[phase][macro]
             if random.random() < mutation_rate:
                 w += random.gauss(0.0, mutation_std)

@@ -8,36 +8,36 @@ from Risk.actions import Action, PlaceArmyAction, FortifyAction
 from Risk.game_state import GameState
 from Risk.map import Country
 from Risk import utils
-from Risk.players.base_player import Player
+from Risk.players.smart_player import SmartPlayer
 
 
 # ---------------------------------------------------------------------------
-# RLPH+ — Risk Learning, versione potenziata
+# RLPH+ - Risk Learning, versione potenziata
 # ---------------------------------------------------------------------------
 # Differenze rispetto a RLPH originale:
 #
-#   FIX 1 — la fase di gioco (place/attack/fortify) entra nello stato.
+#   FIX 1 - la fase di gioco (place/attack/fortify) entra nello stato.
 #            Senza questo, la stessa tupla stato veniva usata per aggiornare
-#            macro di fasi diverse — la Q-table non riusciva a distinguerle.
+#            macro di fasi diverse - la Q-table non riusciva a distinguerle.
 #
-#   FIX 2 — reward ribilanciata:
+#   FIX 2 - reward ribilanciata:
 #            · delta_a scende da 0.5 a 0.1 (le armate cambiano troppo spesso)
 #            · aggiunto continent_gain (+5 per ogni punto bonus conquistato)
 #            · aggiunta front_penalty (-0.1 per paese di confine aperto)
 #
-#   FIX 3 — _record_transition() chiamato dopo ogni singola azione
+#   FIX 3 - _record_transition() chiamato dopo ogni singola azione
 #            (place_armies / attack / fortify), non una sola volta a fine turno
 #            tramite action_cleanup. Il segnale arriva subito, non aggregato.
 #
-#   FIX 4 — epsilon decade del 0.5% dopo ogni partita, floor a 0.05.
+#   FIX 4 - epsilon decade del 0.5% dopo ogni partita, floor a 0.05.
 #            Prima era fisso per sempre e continuava ad esplorare casualmente
 #            anche dopo 1000 partite.
 #
-#   FIX 5 — attack_pass penalizzato se c'erano attacchi disponibili.
+#   FIX 5 - attack_pass penalizzato se c'erano attacchi disponibili.
 #            Prima poteva essere rinforzato per caso se il reward del turno
 #            era positivo per altri motivi.
 #
-#   FIX 6 — turn_setup inizializza _prev_cont_bonus.
+#   FIX 6 - turn_setup inizializza _prev_cont_bonus.
 #            Prima il primo delta continenti del turno era spazzatura.
 # ---------------------------------------------------------------------------
 
@@ -47,15 +47,15 @@ ALPHA         = 0.1    # learning rate
 GAMMA         = 0.9    # discount factor
 EPSILON_START = 0.80   # esplorazione iniziale
 EPSILON_MIN   = 0.80   # floor esplorazione
-EPSILON_DECAY = 0      # moltiplicatore per partita  [FIX 4]
+EPSILON_DECAY = 0      # moltiplicatore per partita
 
-# indici di fase — usati nel bucket dello stato  [FIX 1]
+# indici di fase - usati nel bucket dello stato
 PHASE_PLACE   = 0
 PHASE_ATTACK  = 1
 PHASE_FORTIFY = 2
 
 
-class RLPHPlus(Player):
+class RLPHPlus(SmartPlayer):
     """
     Q-learning tabulare con macro-azioni, versione corretta.
 
@@ -66,24 +66,6 @@ class RLPHPlus(Player):
         epsilon         esplorazione iniziale   (default 0.25)
         troops_to_place truppe iniziali
     """
-
-    PLACE_MACROS = [
-        "place_contested",
-        "place_weakest",
-        "place_continent",
-    ]
-    ATTACK_MACROS = [
-        "attack_easy",
-        "attack_fill",
-        "attack_consolidate",
-        "attack_split",
-        "attack_pass",
-    ]
-    FORTIFY_MACROS = [
-        "fortify_border",
-        "fortify_pass",
-    ]
-    ALL_MACROS = PLACE_MACROS + ATTACK_MACROS + FORTIFY_MACROS
 
     def __init__(
         self,
@@ -108,13 +90,12 @@ class RLPHPlus(Player):
         self._prev_macro:      str   | None = None
         self._prev_countries:  int          = 0
         self._prev_armies:     int          = 0
-        self._prev_cont_bonus: float        = 0.0   # [FIX 6]
-        self._current_phase:   int          = PHASE_PLACE  # [FIX 1]
+        self._prev_cont_bonus: float        = 0.0
+        self._current_phase:   int          = PHASE_PLACE
 
         self._cluster: list[Country] | None = None
         self._games_played: int = 0
 
-    # ── estrazione stato ────────────────────────────────────────────────────
     def _extract_state(self) -> tuple:
         """
         Tupla discreta che rappresenta la situazione corrente.
@@ -154,10 +135,9 @@ class RLPHPlus(Player):
             _bucket(len(owned) / total_c,         [0.15, 0.30, 0.50, 0.70]),
             _bucket(continent_bonus,              [3, 6, 9, 12]),
             _bucket(border_pressure,              [1.0, 2.0, 3.0, 4.0]),
-            self._current_phase,                  # [FIX 1]
+            self._current_phase,
         )
 
-    # ── reward ───────────────────────────────────────────────────────────────
     def _compute_reward(self) -> float:
         """
         [FIX 2] Rispetto all'originale:
@@ -175,12 +155,10 @@ class RLPHPlus(Player):
         delta_a   = (n_armies    - self._prev_armies)    * 0.1   # era 0.5
         dominance = max((n_countries / total_c - 0.3) * 5.0, 0.0)
 
-        # bonus continenti conquistati in questo step  [FIX 2]
         new_bonus      = gm.get_reward(self)
         continent_gain = (new_bonus - self._prev_cont_bonus) * 5.0
         self._prev_cont_bonus = new_bonus
 
-        # penalità fronti aperti  [FIX 2]
         borders       = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
         front_penalty = -len(borders) * 0.1
 
@@ -189,7 +167,6 @@ class RLPHPlus(Player):
 
         return delta_c + delta_a + dominance + continent_gain + front_penalty
 
-    # ── aggiornamento Q ───────────────────────────────────────────────────────
     def _update_q(self, reward: float, next_state: tuple):
         if self._prev_state is None or self._prev_macro is None:
             return
@@ -199,7 +176,6 @@ class RLPHPlus(Player):
             self.alpha * (td_target - self.Q[self._prev_state][self._prev_macro])
         )
 
-    # ── transizione  [FIX 3] ─────────────────────────────────────────────────
     def _record_transition(self):
         """
         Chiamato dopo ogni singola azione (place / attack / fortify),
@@ -212,9 +188,8 @@ class RLPHPlus(Player):
         self._prev_state = next_state
 
     def action_cleanup(self):
-        pass  # svuotato: l'update avviene inline  [FIX 3]
+        pass
 
-    # ── selezione macro ───────────────────────────────────────────────────────
     def _select_macro(self, candidates: list[str]) -> str:
         if random.random() < self.epsilon:
             return random.choice(candidates)
@@ -222,162 +197,39 @@ class RLPHPlus(Player):
         q_vals = {m: self.Q[state][m] for m in candidates}
         return max(q_vals, key=q_vals.__getitem__)
 
-    # ── lifecycle ─────────────────────────────────────────────────────────────
     def turn_setup(self):
-        self._cluster = None
+        super().turn_setup()
         gm = self.game_state.get_game_map()
         self._prev_countries  = len(gm.get_owned_countries(self))
         self._prev_armies     = gm.get_owned_army_size(self)
-        self._prev_cont_bonus = gm.get_reward(self)   # [FIX 6]
-        self._current_phase   = PHASE_PLACE            # [FIX 1]
+        self._prev_cont_bonus = gm.get_reward(self)
+        self._current_phase   = PHASE_PLACE
         self._prev_state      = self._extract_state()
 
-    # ── fasi di gioco ─────────────────────────────────────────────────────────
     def place_armies(self) -> Action | None:
-        self._current_phase = PHASE_PLACE              # [FIX 1]
+        self._current_phase = PHASE_PLACE
         macro  = self._select_macro(self.PLACE_MACROS)
         self._prev_macro = macro
         action = self._execute_place_macro(macro)
-        self._record_transition()                      # [FIX 3]
+        self._record_transition()
         return action
 
     def attack(self) -> Action | None:
-        self._current_phase = PHASE_ATTACK             # [FIX 1]
+        self._current_phase = PHASE_ATTACK
         macro  = self._select_macro(self.ATTACK_MACROS)
         self._prev_macro = macro
         action = self._execute_attack_macro(macro)
-        self._record_transition()                      # [FIX 3]
+        self._record_transition()
         return action
 
     def fortify(self) -> Action | None:
-        self._current_phase = PHASE_FORTIFY            # [FIX 1]
+        self._current_phase = PHASE_FORTIFY
         macro  = self._select_macro(self.FORTIFY_MACROS)
         self._prev_macro = macro
         action = self._execute_fortify_macro(macro)
-        self._record_transition()                      # [FIX 3]
+        self._record_transition()
         return action
 
-    # ── esecuzione macro: place ───────────────────────────────────────────────
-    def _execute_place_macro(self, macro: str) -> Action | None:
-        owned = self.game_state.get_game_map().get_owned_countries(self)
-
-        if self.troops_to_place <= 0:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        target = None
-
-        if macro == "place_contested":
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = utils.get_most_contested_country(borders, self)
-
-        elif macro == "place_weakest":
-            target = utils.get_weakest_friendly_country(self.game_state, self)
-
-        elif macro == "place_continent":
-            best_cont, best_val = None, -1.0
-            for cont in self.game_state.get_game_map().get_continents():
-                owned_in  = [c for c in cont.get_countries() if c in owned]
-                n_total   = len(cont.get_countries()) or 1
-                progress  = len(owned_in) / n_total
-                val       = progress * (1.0 + cont.get_reward(self) / 10.0)
-                if val > best_val:
-                    best_val, best_cont = val, cont
-            if best_cont:
-                action = self.place_to_take_continent(best_cont)
-                if action:
-                    return action
-
-        if target is None:
-            borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-            target  = (
-                utils.get_most_contested_country(borders, self)
-                or (owned[0] if owned else None)
-            )
-
-        if target is None:
-            self.add_completed_phase(GameState.PLACE_ARMY)
-            return None
-
-        self.troops_to_place -= 1
-        return PlaceArmyAction(target, 1)
-
-    # ── esecuzione macro: attack ───────────────────────────────────────────────
-    def _execute_attack_macro(self, macro: str) -> Action | None:
-
-        if macro == "attack_pass":
-            # [FIX 5] penalità diretta se c'erano attacchi disponibili
-            owned = self.game_state.get_game_map().get_owned_countries(self)
-            feasible = any(
-                c.get_army_size() > 1 and c.get_number_of_enemy_neighbors() > 0
-                for c in owned
-            )
-            if feasible and self._prev_state is not None:
-                self.Q[self._prev_state]["attack_pass"] -= 0.5
-
-            self.add_completed_phase(GameState.ATTACK)
-            return None
-
-        if self._cluster is None:
-            self._cluster = self.game_state.get_game_map().get_owned_countries(self)
-
-        if macro == "attack_easy":
-            action = self.attack_easy_expand(self._cluster)
-        elif macro == "attack_fill":
-            action = self.attack_fill_out(self._cluster)
-        elif macro == "attack_consolidate":
-            action = self.attack_consolidate(self._cluster)
-        elif macro == "attack_split":
-            action = self.attack_split_up(self._cluster, attack_ratio=1.2)
-        else:
-            action = self.attack_easy_expand(self._cluster)
-
-        if action:
-            return action
-
-        self.add_completed_phase(GameState.ATTACK)
-        return None
-
-    # ── esecuzione macro: fortify ─────────────────────────────────────────────
-    def _execute_fortify_macro(self, macro: str) -> Action | None:
-        if macro == "fortify_pass":
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        gm      = self.game_state.get_game_map()
-        owned   = gm.get_owned_countries(self)
-        borders = [c for c in owned if c.get_number_of_enemy_neighbors() > 0]
-
-        if not borders:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        target = utils.get_most_contested_country(borders, self)
-        if not target:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        connected = target.get_connected_friendly_countries()
-        interior  = [
-            c for c in connected
-            if c.get_number_of_enemy_neighbors() == 0 and c.get_army_size() > 1
-        ]
-
-        if not interior:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        source = max(interior, key=lambda c: c.get_army_size())
-        n      = source.get_army_size() - 1
-
-        if n <= 0:
-            self.add_completed_phase(GameState.FORTIFY)
-            return None
-
-        self.add_completed_phase(GameState.FORTIFY)
-        return FortifyAction(source, target, n)
-
-    # ── reward terminale ──────────────────────────────────────────────────────
     def receive_terminal_reward(self, won: bool):
         """
         Chiamare una volta a fine partita.
@@ -396,7 +248,6 @@ class RLPHPlus(Player):
         #    f"ε={self.epsilon:.3f} | stati Q={len(self.Q)}"
         #)
 
-    # ── persistenza ───────────────────────────────────────────────────────────
     def save(self, filepath: str):
         data = {
             "epsilon":      self.epsilon,
@@ -424,10 +275,9 @@ class RLPHPlus(Player):
             f"({len(self.Q)} stati, {self._games_played} partite)"
         )
 
-    # ── debug ─────────────────────────────────────────────────────────────────
     def explain(self) -> str:
         lines = [
-            f"RLPH+ [{self.color}] — {self._games_played} partite",
+            f"RLPH+ [{self.color}] - {self._games_played} partite",
             f"epsilon={self.epsilon:.3f}  alpha={self.alpha}  gamma={self.gamma}",
             f"stati Q esplorati: {len(self.Q)}",
             "",

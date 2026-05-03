@@ -1,13 +1,13 @@
 """
-train_rlph_plus.py — Training loop per RLPHPlus.
+train_rlph_plus.py - Training loop per RLPHPlus.
 
 Lancialo dalla ROOT del progetto con:
     python -m Risk.train_rlph_plus
 
 Output:
-    rl_best.json      — checkpoint con il miglior win-rate rolling (ultimi 100 ep)
-    rl_last.json      — stato finale a fine training
-    rl_stats.json     — storico completo per analisi/plot
+    rl_best.json      - checkpoint con il miglior win-rate rolling (ultimi 100 ep)
+    rl_last.json      - stato finale a fine training
+    rl_stats.json     - storico completo per analisi/plot
 """
 
 from __future__ import annotations
@@ -40,7 +40,6 @@ from Risk.players.pixie import Pixie
 from Risk.players.communist import Communist
 from Risk.players.cluster import Cluster
 from Risk.players.angry import Angry
-from Risk.players.deepraph import DeepRLPH
 from Risk.players.rlph_plus import RLPHPlus
 
 # ── iperparametri ────────────────────────────────────────────────────────────
@@ -173,7 +172,7 @@ def run_training():
     map_csv = _find_map_csv()
     console = Console()
 
-    agent = DeepRLPH("rl")
+    agent = RLPHPlus("rl")
 
     wins:          int              = 0
     history:       list[EpisodeStats] = []
