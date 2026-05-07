@@ -42,8 +42,8 @@ class SmartPlayer(Player):
 
     Attributes:
         _cluster: Cached list of owned countries for attack macros; reset each
-                  turn in turn_setup.  Subclasses that override turn_setup
-                  must call super().turn_setup() to keep this fresh.
+                turn in turn_setup.  Subclasses that override turn_setup
+                must call super().turn_setup() to keep this fresh.
     """
 
     # ------------------------------------------------------------------
