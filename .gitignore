@@ -4,3 +4,5 @@ venv
 *.zip
 *.json
 !models/*.json
+presentazione/*
+!presentazione/main.tex
