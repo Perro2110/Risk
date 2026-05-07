@@ -3,3 +3,5 @@ venv
 *.pyc
 *.zip
 *.json
+presentazione/*
+!presentazione/main.tex
