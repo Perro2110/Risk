@@ -1,0 +1,37 @@
+{
+  "genome": {
+    "place": {
+      "place_contested": -0.05407485640493258,
+      "place_weakest": 0.2522902962475534,
+      "place_continent": 0.18956062349906422,
+      "place_angry": -2.3015934393717217,
+      "place_stinky": -0.8012987204154499,
+      "place_cluster": 2.0781972942834486,
+      "place_pixie": -1.2689968395330313,
+      "place_communist": 0.03783690204906895
+    },
+    "attack": {
+      "attack_easy": -0.6870493838349521,
+      "attack_fill": -0.6137184739997172,
+      "attack_consolidate": -0.714169379624443,
+      "attack_split": 2.3773129170542147,
+      "attack_pass": -1.2850837997203421,
+      "attack_angry": 0.0428116209381606,
+      "attack_stinky": 1.2865487033453402,
+      "attack_communist": 1.3828668111685238,
+      "attack_pixie": -0.9392193338613408,
+      "attack_cluster": -0.26555473692258647
+    },
+    "fortify": {
+      "fortify_border": 0.9245108304868449,
+      "fortify_pass": -0.5196478903093913,
+      "fortify_angry": -1.097787017053132,
+      "fortify_cluster": -0.43578277599957627,
+      "fortify_communist": 2.0494290611349233,
+      "fortify_pixie": 1.1141181658801402
+    }
+  },
+  "fitness": 0.72,
+  "generation": 25,
+  "temperature": 1.0
+}
