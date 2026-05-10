@@ -56,8 +56,8 @@ CONTINENT_TINTS: dict[str, str] = {
     "Australia":     "#7E86BF",   # teal-mint
 }
 
-# Player colours — muted, board-paint inspired
-PLAYER_COLOURS = [
+# Player colors — muted, board-paint inspired
+PLAYER_COLORS = [
     "#B03030",   # brick red
     "#2A5F8F",   # navy blue
     "#3A7A3A",   # forest green
@@ -67,6 +67,17 @@ PLAYER_COLOURS = [
     "#30787A",   # dark teal
     "#A04060",   # dusty rose
 ]
+PLAYER_SPRITES = [
+    'red',
+    'blue',
+    'green',
+    'yellow',
+    'purple',
+    'white',
+    'yellow',
+    'blue',
+    'red',
+];
 NEUTRAL_COLOUR = "#9A8A78"   # warm grey-brown
 
 # Accent / chrome
@@ -283,22 +294,6 @@ def _parchment_texture_overlay(ax: plt.Axes) -> None:
               aspect="auto", zorder=10, interpolation="bicubic")
 
 
-def _vignette_overlay(ax: plt.Axes) -> None:
-    """Subtle radial vignette around map edges using a gradient fill polygon."""
-    # We approximate the vignette with 4 edge gradient strips
-    for (x0, y0, x1, y1) in [
-        (0, 0, 8, 100), (92, 0, 100, 100),   # left, right
-        (0, 0, 100, 8), (0, 92, 100, 100),   # bottom, top
-    ]:
-        alpha = 0.18
-        ax.fill(
-            [x0, x1, x1, x0],
-            [y0, y0, y1, y1],
-            color=OCEAN_DEEP,
-            alpha=alpha, zorder=9, linewidth=0,
-        )
-
-
 def _draw_compass(ax: plt.Axes,
                   cx: float = 5.5, cy: float = 8.0,
                   r: float = 3.5) -> None:
@@ -410,9 +405,16 @@ class RiskVisualizer:
                 sp.set_visible(False)
 
     @staticmethod
-    def _colour_map(gs: GameState) -> dict[str, str]:
+    def _color_map(gs: GameState) -> dict[str, str]:
         return {
-            p.color: PLAYER_COLOURS[i % len(PLAYER_COLOURS)]
+            p.color: PLAYER_COLORS[i % len(PLAYER_COLORS)]
+            for i, p in enumerate(gs.get_players())
+        }
+    
+    @staticmethod
+    def _color_sprites(gs: GameState) -> dict[str, str]:
+        return {
+            p.color: PLAYER_SPRITES[i % len(PLAYER_SPRITES)]
             for i, p in enumerate(gs.get_players())
         }
 
@@ -431,36 +433,36 @@ class RiskVisualizer:
             ax.imshow(plt.imread("data/Risk_board.png"),
                       extent=(0, 100, 0, 100), zorder=0)
         except Exception:
-            pass   # no base image — colour overlays will carry the rendering
+            pass   # no base image — color overlays will carry the rendering
 
         # --- continent tint overlays ----------------------------------------
         gs_countries = {
             c.get_name(): c for c in gs.get_game_map().get_countries()
         }
-        for cont, members in CONTINENT_MEMBERS.items():
-            pts = [TERRITORY_POS[t] for t in members if t in TERRITORY_POS]
-            poly = _convex_hull_polygon(pts, pad=2.0)
-            if poly is None:
-                continue
-            tint = CONTINENT_TINTS.get(cont, PARCHMENT)
-            shapely_poly = ShapelyPolygon(poly)
-            rounded = shapely_poly.buffer(3, join_style=1)
-            rounded_coords = list(rounded.exterior.coords)
+        # for cont, members in CONTINENT_MEMBERS.items():
+        #     pts = [TERRITORY_POS[t] for t in members if t in TERRITORY_POS]
+        #     poly = _convex_hull_polygon(pts, pad=2.0)
+        #     if poly is None:
+        #         continue
+        #     tint = CONTINENT_TINTS.get(cont, PARCHMENT)
+        #     shapely_poly = ShapelyPolygon(poly)
+        #     rounded = shapely_poly.buffer(3, join_style=1)
+        #     rounded_coords = list(rounded.exterior.coords)
 
-            ax.add_patch(Polygon(
-                rounded_coords, closed=True,
-                facecolor=to_rgba(tint, 0.38),
-                edgecolor=to_rgba(INK_FAINT, 0.5),
-                linewidth=0.6, linestyle="--",
-                zorder=1,
-            ))
+        #     ax.add_patch(Polygon(
+        #         rounded_coords, closed=True,
+        #         facecolor=to_rgba(tint, 0.38),
+        #         edgecolor=to_rgba(INK_FAINT, 0.5),
+        #         linewidth=0.6, linestyle="--",
+        #         zorder=1,
+        #     ))
 
         # --- parchment texture + vignette -----------------------------------
         _parchment_texture_overlay(ax)
-        _vignette_overlay(ax)
+        # _vignette_overlay(ax)
 
         # --- adjacency lines ------------------------------------------------
-        cmap = self._colour_map(gs)
+        cmap = self._color_map(gs)
 
         # for a, b in ADJACENCY:
         #     if a not in TERRITORY_POS or b not in TERRITORY_POS:
@@ -560,21 +562,21 @@ class RiskVisualizer:
         _draw_compass(ax, cx=5.5, cy=7.5, r=4.0)
 
         # Decorative title banner
-        ax.text(
-            50, 95.5,
-            "RISK  -  THE GAME OF GLOBAL DOMINATION",
-            color=INK, ha="center", va="bottom",
-            fontsize=11, fontweight="bold",
-            # fontfamily=TITLE_FAMILY,
-            fontstyle="italic",
-            path_effects=[
-                pe.withStroke(linewidth=2.5, foreground=PARCHMENT)
-            ],
-            clip_on=False,
-        )
+        # ax.text(
+        #     50, 95.5,
+        #     "RISK  -  THE GAME OF GLOBAL DOMINATION",
+        #     color=INK, ha="center", va="bottom",
+        #     fontsize=11, fontweight="bold",
+        #     # fontfamily=TITLE_FAMILY,
+        #     fontstyle="italic",
+        #     path_effects=[
+        #         pe.withStroke(linewidth=2.5, foreground=PARCHMENT)
+        #     ],
+        #     clip_on=False,
+        # )
         # Thin decorative rule beneath title
-        ax.axhline(99.8, color=INK_FAINT, linewidth=0.7,
-                   xmin=0.05, xmax=0.95, zorder=7)
+        # ax.axhline(99.8, color=INK_FAINT, linewidth=0.7,
+        #            xmin=0.05, xmax=0.95, zorder=7)
 
     # -------------------------------------------------------------------------
     #  SIDE PANEL  (scoreboard)
@@ -597,7 +599,8 @@ class RiskVisualizer:
 
         game_map = gs.get_game_map()
         players  = gs.get_players()
-        cmap     = self._colour_map(gs)
+        cmap     = self._color_map(gs)
+        smap     = self._color_sprites(gs)
         total    = len(game_map.get_countries())
 
         # Panel heading
@@ -605,27 +608,27 @@ class RiskVisualizer:
                 color=INK, ha="center", va="top",
                 fontsize=9.5, fontweight="bold",
                 # fontfamily=TITLE_FAMILY,
-                fontstyle="italic",
                 transform=ax.transAxes)
         _rule(ax, 0.940)
 
         # --- Player rows ----------------------------------------------------
         n = len(players)
-        card_h = min(0.155, 0.72 / max(n, 1))
+        card_h = min(0.121, 0.5 / max(n, 1))
         gap    = 0.010
 
         for i, player in enumerate(players):
-            y_top = 0.925 - i * (card_h + gap)
-            col   = cmap[player.color]            # type: ignore
-            owned = game_map.get_owned_countries(player)
-            n_c   = len(owned)
-            n_a   = sum(c.get_army_size() for c in owned)
-            pct   = n_c / total if total else 0
+            y_top  = 0.925 - i * (card_h + gap)
+            col    = cmap[player.color]            # type: ignore
+            sprite = smap[player.color]            # type: ignore
+            owned  = game_map.get_owned_countries(player)
+            n_c    = len(owned)
+            n_a    = sum(c.get_army_size() for c in owned)
+            pct    = n_c / total if total else 0
             is_current = (player == gs.get_current_player())
 
             y_bot = y_top - card_h
 
-            # Row background — subtle tint matching player colour
+            # Row background — subtle tint matching player color
             ax.add_patch(FancyBboxPatch(
                 (0.06, y_bot), 0.88, card_h,
                 boxstyle="square,pad=0.0",
@@ -639,30 +642,35 @@ class RiskVisualizer:
 
             # Active-turn marker (small triangle)
             if is_current:
-                ax.text(0.07, mid_y + 0.006, "▶",
+                ax.text(0.07, mid_y + 0.006, ">",
                         color=INK, ha="center", va="center",
                         fontsize=5.5, fontweight="bold",
                         transform=ax.transAxes, zorder=4)
 
+            ax.imshow(plt.imread(f"data/sprites/men/{sprite}.png"),
+                      aspect="auto",
+                      extent=(0.08, 0.34, mid_y - 0.048, mid_y + 0.055), zorder=99)
+
             # Player name
-            ax.text(0.22, mid_y + 0.018, str(player),  # type: ignore
+            ax.text(0.38, mid_y + 0.042, str(player),  # type: ignore
                     color=INK, ha="left", va="center",
-                    fontsize=7.0, fontweight="bold",
+                    fontsize=9.0, fontweight="bold",
                     # fontfamily=SERIF_FAMILY,
                     transform=ax.transAxes)
 
             # Territory / army counts
-            ax.text(0.22, mid_y - 0.018,
+            ax.text(0.38, mid_y + 0.022,
                     f"{n_c} territories   {n_a} armies",
                     color=INK_MID, ha="left", va="center",
-                    fontsize=5.2, # fontfamily=SERIF_FAMILY,
+                    fontsize=7.2, # fontfamily=SERIF_FAMILY,
                     transform=ax.transAxes)
 
             # Dominance bar (simple horizontal ink-fill)
-            bar_y  = y_bot + 0.010
+            bar_y  = y_bot + 0.02
             bar_h  = 0.014
-            bar_x0 = 0.08
-            bar_w  = 0.84
+            bar_x0 = 0.38
+            bar_w  = 0.5
+
             # background track
             ax.add_patch(FancyBboxPatch(
                 (bar_x0, bar_y), bar_w, bar_h,
@@ -672,6 +680,7 @@ class RiskVisualizer:
                 linewidth=0.4,
                 transform=ax.transAxes,
             ))
+
             # filled portion
             if pct > 0:
                 ax.add_patch(FancyBboxPatch(
@@ -693,7 +702,7 @@ class RiskVisualizer:
         _rule(ax, sep_y)
         ax.text(0.5, sep_y - 0.010, "Continents",
                 color=INK, ha="center", va="top",
-                fontsize=7.0, fontweight="bold", fontstyle="italic",
+                fontsize=7.0, fontweight="bold",
                 # fontfamily=TITLE_FAMILY,
                 transform=ax.transAxes)
 
@@ -769,7 +778,7 @@ class RiskVisualizer:
         phases = ["Place Armies", "Attack", "Fortify"]
         cur    = gs.get_phase()
         player = gs.get_current_player()
-        cmap   = self._colour_map(gs)
+        cmap   = self._color_map(gs)
         p_col  = cmap.get(player.color, NEUTRAL_COLOUR)   # type: ignore
 
         # Player label
