@@ -29,9 +29,9 @@ class PlaceArmyAction(Action):
         self.country = country
         self.num_armies = num_armies
 
-    def execute(self):
+    def execute(self, silent = True):
         """ Executes the action """
-        print(f"Placing {self.num_armies} troops at {self.country.name}")
+        silent or print(f"Placing {self.num_armies} troops at {self.country.name}") # type: ignore
         self.country.set_army_size(
             self.country.get_army_size() + self.num_armies
         )
@@ -50,17 +50,17 @@ class FortifyAction(Action):
         self.to_country = to_country
         self.num_armies = num_armies
 
-    def execute(self):
+    def execute(self, silent = True):
         """ Executes the action """
 
         if self.num_armies < 0:
             return
 
-        print(f"player {self.from_country.get_owner()} \
+        silent or print(f"player {self.from_country.get_owner()} \
               (country {self.from_country.get_name()} \
               {self.from_country.get_army_size()}) \
               is placing {self.num_armies} troops in country \
-              {self.to_country.get_name()} {self.to_country.get_army_size()}!")
+              {self.to_country.get_name()} {self.to_country.get_army_size()}!") # type: ignore
 
         if self.num_armies >= self.from_country.get_army_size() - 1:
             self.num_armies = self.from_country.get_army_size() - 1
@@ -97,7 +97,7 @@ class AttackAction(Action):
         self.to_country = to_country
         self.num_armies = num_armies
 
-    def execute(self):
+    def execute(self, silent = True):
         """ Executes the action """
         num_attackers = self.num_armies
 
@@ -115,12 +115,12 @@ class AttackAction(Action):
             reverse=True
         )
 
-        print(f"player {self.from_country.get_owner()} \
+        silent or print(f"player {self.from_country.get_owner()} \
                 (country {self.from_country.get_name()} {num_attackers} \
                 out of {self.from_country.get_army_size()}) \
                 is attacking player {self.to_country.get_owner()} \
                 (country {self.to_country.get_name()} {num_defenders} \
-                out of {self.to_country.get_army_size()})!")
+                out of {self.to_country.get_army_size()})!") # type: ignore
 
         if num_defenders <= -1:
             raise Exception()
@@ -138,7 +138,7 @@ class AttackAction(Action):
 
         # If the attacker conquered the to_country, move armies in
         if self.to_country.get_army_size() == 0:
-            print("Attacking player won")
+            silent or print("Attacking player won") # type: ignore
             self.to_country.set_owner(self.from_country.get_owner())
             fortify_action = FortifyAction(
                 self.from_country,

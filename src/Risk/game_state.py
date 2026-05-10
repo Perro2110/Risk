@@ -57,6 +57,10 @@ class GameState:
         """ Add the player to the start of the leaderboard """
         self.leaderboard.insert(0, player)
 
+    def get_leaderboard(self):
+        """ Return the leaderboard """
+        return self.leaderboard
+
     def get_phase(self) -> int:
         """ Get the current game phase """
         return self.phase

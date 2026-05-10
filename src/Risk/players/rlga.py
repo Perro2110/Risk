@@ -121,7 +121,7 @@ class RLGA(SmartPlayer):
             data = json.load(f)
         self.genome = data["genome"]
         self.temperature = data.get("temperature", 1.0)
-        print(f"[RLGA {self.color}] caricato da {filepath}")
+        # print(f"[RLGA {self.color}] caricato da {filepath}")
 
     #  debug
     def explain(self) -> str:

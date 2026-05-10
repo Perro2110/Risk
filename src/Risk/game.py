@@ -13,7 +13,7 @@ class Game:
                 self,
                 game_map: Map,
                 game_length: int = 100,
-                enable_visualizer: bool = True
+                enable_visualizer: bool = False
             ):
         self.game_length = game_length  # number of turns before the game ends
         self.players: list[Player] = []
@@ -122,27 +122,28 @@ class Game:
             if player.is_dead:
                 self.get_game_state().add_to_leaderboard(player)
 
-    def play(self, seed: int | None = None):
+    def play(self, seed: int | None = None, silent = True):
         if len(self.players) <= 1 or len(self.players) > 6:
             raise AttributeError('Invalid number of players')
 
         self.turn = 0
 
-        print('Initializing game state: ')
+        silent or print('Initializing game state: ') # type: ignore
         self.__init_game_state()
-        print('Initial game state: ')
-        print(self.game_state)
+        silent or print('Initial game state: ') # type: ignore
+        silent or print(self.game_state) # type: ignore
 
-        print(f'Game starting{f' with seed {seed}' if seed else ''}: ')
-        random.seed(seed)
+        if seed is not None:
+            print(f'Game starting{f' with seed {seed}' if seed else ''}: ')
+            random.seed(seed)
 
         """ Plays the game until the end condition is met """
         while not self.is_game_over():
-            print(f'Turn: {self.turn}')
+            silent or print(f'Turn: {self.turn}') # type: ignore
 
             for player in self.get_alive_players():
                 player.set_completed_phases()
-                print(f'player: {player}')
+                silent or print(f'player: {player}') # type: ignore
                 self.__play_turn(player)
                 self.get_game_state().next_player()
 
@@ -154,11 +155,10 @@ class Game:
                 self.get_alive_players()[0]
             )
         else:
-            # Sort players based on the number of controlled countries reversed
+            # Sort players based on the number of controlled countries
             sorted_players = sorted(
                 self.get_alive_players(),
                 key=lambda player: self.get_map().get_num_countries(player),
-                reverse=True
             )
 
             for player in sorted_players:
@@ -167,9 +167,10 @@ class Game:
         if self.viz is not None:
             self.viz.show()
 
-        print('Final game state: ')
-        for player in self.players:
-            print(f"player {player} owns \
-                {len(self.get_game_state().get_game_map()
-                     .get_owned_countries(player))} \
-            ")
+        if not silent:
+            print('Final game state: ')
+            for player in self.players:
+                print(f"player {player} owns \
+                    {len(self.get_game_state().get_game_map()
+                        .get_owned_countries(player))} \
+                ")

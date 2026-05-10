@@ -17,7 +17,7 @@ class Pixie(Player):
 
     def turn_setup(self):
         """ Find the best continent by cluster size """
-        if self.continents is None:
+        if not len(self.continents):
             self.continents = self.game_state.get_game_map().get_continents()
 
         best_ratio = 0
@@ -27,7 +27,7 @@ class Pixie(Player):
             owned_army = continent.get_owned_army_size(self)
             enemy_army = continent.get_enemy_army_size(self)
 
-            current_ratio = owned_army / enemy_army
+            current_ratio = owned_army / (enemy_army if enemy_army else 1)
 
             if current_ratio > best_ratio:
                 best_ratio = current_ratio
@@ -44,8 +44,7 @@ class Pixie(Player):
 
     def calculate_wanted_continents(self, troops_to_place: int = 1):
         contient_number = len(self.continents)
-        if self.chance_to_own is None:
-            self.chance_to_own = [False] * contient_number
+        self.chance_to_own = [False] * contient_number
 
         needed_army = [0] * contient_number
         for i in range(contient_number):
@@ -68,6 +67,11 @@ class Pixie(Player):
                 self.chance_to_own[i] = False
 
     def place_armies(self) -> Action | None:
+        # check if any troops are left to place
+        if self.troops_to_place == 0:
+            self.add_completed_phase(GameState.PLACE_ARMY)
+            return None
+
         # If we want a continent place it in the best possible continent
         # This is calculated at turn start in the turn_setup function
         if self.wants_a_continent and self.best_continent:
@@ -115,7 +119,7 @@ class Pixie(Player):
         return None
 
     def attack(self) -> Action | None:
-        # For each continent, if we have a chance to own it, we attack just
+        # For each continent, if we have a chance to own it, we attack
         # just like black player except we attack only neighbors inside the
         # continent
         for (i, continent) in enumerate(self.continents):

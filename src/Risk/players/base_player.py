@@ -341,6 +341,7 @@ class Player(ABC):
 
             troops_to_place = self.troops_to_place
             self.troops_to_place -= troops_to_place
+
             return PlaceArmyAction(
                 country_to_place,
                 troops_to_place
