@@ -686,13 +686,89 @@
 		\end{columns}
 	\end{frame}
 	
-	\begin{frame}{Other idea}
-		- Reinforcement Learning \\
-		- Boosting online (sperimentale) \\
+	\begin{frame}{\centering Altri tentativi...}
+		\begin{columns}[T]
+			% ---- colonna sinistra: RL ----
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Reinforcement Learning}<1->
+					\small
+					Addestrare un player tramite \alert{ricompense} basate
+					sull'esito delle partite, usando una \textbf{Q-Table}
+					per mappare stati $\to$ azioni ottimali.
+				\end{block}
+				\onslide<2->{
+					\begin{tcolorbox}[
+						enhanced,
+						colback=gray!4,
+						colframe=customgreen!70,
+						boxrule=0.5pt,
+						fonttitle=\bfseries\small,
+						title={Q-Table}]
+						\scriptsize
+						\vspace{0.2em}
+						\centering
+						\resizebox{\linewidth}{!}{%
+\begin{tabular}{c|ccccccccc}
+    \toprule
+    $s \,\backslash\, a$
+        & \texttt{atk$_1$} & \texttt{atk$_2$} & $\cdots$
+        & \texttt{frt$_1$} & \texttt{frt$_2$} & $\cdots$
+        & \texttt{plc$_1$} & \texttt{plc$_2$} & $\cdots$ \\
+    \midrule
+    $s_1$ & \cellcolor{customgreen!30}$0.8$ & $0.3$ & $\cdots$ & $0.2$ & $0.1$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ \\
+    $s_2$ & $0.1$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.9$ & $0.7$ & $\cdots$ & $0.3$ & $0.1$ & $\cdots$ \\
+    $s_3$ & $0.5$ & $0.3$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.7$ & $0.5$ & $\cdots$ \\
+    $\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
+    \bottomrule
+\end{tabular}%
+}
+					\end{tcolorbox}
+				}
+			\end{column}
+
+			% ---- colonna destra: Online Boosting ----
+			\begin{column}{0.48\textwidth}
+				\begin{block}{Online Boosting}
+					<1->
+					Addestramento \alert{incrementale} di alberi decisionali
+					\emph{durante} le partite, per coprire situazioni
+					mai incontrate o gestite male.
+				\end{block}
+				\onslide<3->{
+					\begin{tcolorbox}[
+						enhanced,
+						colback=gray!4,
+						colframe=customgreen!70,
+						boxrule=0.5pt,
+						fonttitle=\bfseries\small,
+						title={Idea}]
+						\scriptsize
+						\begin{pseudocode}
+							\pckw{on} ogni azione $a$ in partita \pckw{do} \\
+							\> \pckw{if} esito($a$) $= $ \emph{negativo} \\
+							\>\> aggiungi $(s, a)$ al dataset \\
+							\>\> \pckw{update} albero corrente \\
+							\> \pckw{end if} \\
+							\pckw{end on}
+						\end{pseudocode}
+						\vspace{0.3em}
+						Ogni partita \emph{affina} il modello:\\[2pt]
+						\centering
+						$\mathcal{T}_{k+1} = \textsc{Boost}(\mathcal{T}_k,\; \Delta_{\text{partita}})$
+					\end{tcolorbox}
+				}
+				\begin{alertblock}{Caratteristica chiave}<4->
+					\small
+					\alert{Apprendimento adattivo}: il bot migliora
+					autonomamente partita dopo partita.
+				\end{alertblock}
+			\end{column}
+		\end{columns}
 	\end{frame}
 	
+	\section{Soluzione Scelta: RLGA}
 	% ,,,- RLGA ,,,,,,,,,,,,,,,,,,,,--
-	\begin{frame}{\centering Algoritmo: RLGA , Evoluzione Genetica}
+	\begin{frame}{\centering Algoritmo: RLGA, Evoluzione Genetica}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{tcolorbox}[
