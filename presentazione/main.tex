@@ -172,8 +172,8 @@
 				\item<1-> Introduzione \& Motivazione
 				\item<2-> Modellazione del Gioco
 				\item<3-> Bot dalla Letteratura
-				\item<4-> Algoritmi per Giocatori Intelligenti
-				\item<5-> Primi Risultati
+				\item<4-> Architettura per Giocatori Intelligenti
+				\item<5-> Risultati
 				\item<6-> Conclusioni
 			\end{itemize}
 		\end{center}
@@ -187,19 +187,20 @@
 		\begin{itemize}
 			\item \alert{Risk} è un gioco da tavolo strategico classico: territorio,
 			risorse, alleanze e fortuna si intrecciano in modo non banale.
-			\item È un ambiente ideale per studiare \alert{agenti artificiali} in giochi
-			multi-agente stocastici con informazione parziale.
+			\item È un ambiente d'interesse per studiare \alert{agenti artificiali} in giochi
+			competitivi.
 			\item La complessità del dominio lo rende un \alert{benchmark impegnativo}
 			per metodi di apprendimento automatico.
 		\end{itemize}
 		
 		\vspace{0.1cm}
-		\textbf{Cosa vogliamo fare:}
+		\textbf{Obiettivi:}
 		\begin{itemize}
 			\item Si vuole creare un framework \alert{aperto, modulare e Python-nativo}
 			per la simulazione di Risk e lo sviluppo di agenti.
-			\item Le strategie \alert{hand-coded} offrono un punto di riferimento, ma
-			non apprendono né si adattano.
+			\item Si è implementato una suite di bot basati su lavori noti in letteratura;
+			\\ tali strategie, \alert{hand-coded}, offrono un punto di riferimento, \alert{ma}
+			non apprendono né si adattano, si vogliono superare tali limiti.
 		\end{itemize}
 		
 		
@@ -219,8 +220,8 @@
 						\item \textbf{GameState}: fase corrente (\textsc{place}/\textsc{attack}/
 						\textsc{fortify}), giocatore corrente, leaderboard.
 						\item \textbf{Game}: orchestratore di turni; inizializza lo stato,
-						chiama \texttt{choose\_action} in loop, aggiorna il visualizzatore.
-						\item \textbf{Action}: gerarchia ABC con
+						interpella i \texttt{player} \\ e aggiorna il visualizzatore.
+						\item \textbf{Action}: gerarchia astratta con
 						\texttt{PlaceArmyAction}, \texttt{AttackAction},
 						\texttt{FortifyAction}.
 					\end{itemize}
@@ -253,7 +254,7 @@
 		\end{columns}
 	\end{frame}
 	
-	\begin{frame}{\centering Modellazione del Gioco , Turno}
+	\begin{frame}{\centering Modellazione del Gioco: Turno}
 		
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -266,7 +267,7 @@
 					title={Struttura di un turno}]
 					\footnotesize
 					\begin{pseudocode}
-						\pckw{for each} player alive \pckw{do} \\
+						\pckw{for each} alive player \pckw{do} \\
 						\> set phase $\leftarrow$ \textsc{place} \\
 						\> player.turn\_setup() \\[2pt]
 						\> \pckw{loop} \\
@@ -287,10 +288,10 @@
 				\begin{block}{Fasi del turno}
 					\small
 					\begin{enumerate}
-						\item \textbf{Place Army}: il giocatore piazza le truppe di rinforzo
-						calcolate dalla mappa (continenti controllati + $\lfloor n/3 \rfloor$).
+						\item \textbf{Place Army}: il giocatore piazza \\le truppe di rinforzo
+						calcolate dalla mappa (bonus continenti + $\lfloor n/3 \rfloor$).
 						\item \textbf{Attack}: attacchi illimitati con lancio di dadi classico
-						Risk (max 3 attaccanti vs max 3 difensori).
+						di Risk (max 3 attaccanti vs max 3 difensori).
 						\item \textbf{Fortify}: un solo spostamento tra paesi connessi
 						per alleanza.
 					\end{enumerate}
@@ -308,8 +309,9 @@
 	% =============================================================================
 	\section{Bot dalla Letteratura}
 	
+	\section{Angry}
 	% ,,,- Angry ,,,,,,,,,,,,,,,,,,,,--
-	\begin{frame}{\centering Bot: \texttt{Angry} , Strategia Aggressiva}
+	\begin{frame}{\centering Bot: \texttt{Angry}, Strategia Aggressiva}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{block}{Strategia}<1->
@@ -337,15 +339,15 @@
 			\end{column}
 			\begin{column}{0.46\textwidth}
 				\begin{center}
-					\onslide<5->{
+					
 						\begin{tikzpicture}[scale=0.9,
 							own/.style={circle,draw,fill=mDarkTeal!30,minimum size=8mm,font=\tiny},
 							enemy/.style={circle,draw,fill=red!30,minimum size=8mm,font=\tiny},
 							arr/.style={-Stealth,thick,customgreen}]
-							\node[own]   (a) at (0,0)    {$A_{12}$};
-							\node[enemy] (e1) at (2,0.8) {$E_4$};
-							\node[enemy] (e2) at (2,-0.8){$E_6$};
-							\node[own]   (b) at (-2,0)   {$B_3$};
+							\node[own]   (a) at (0,0)    {$A_2$};
+							\node[enemy] (e1) at (2,0.8) {$E_1$};
+							\node[enemy] (e2) at (2,-0.8){$E_2$};
+							\node[own]   (b) at (-2,0)   {$A_1$};
 							\draw[-] (a) -- (e1);
 							\draw[arr,dashed,red!70] (a) -- (e2) node[midway,above=2pt,font=\tiny]{attack};
 							\draw[arr,dashed,blue!60] (b) -- (a) node[midway,above,font=\tiny]{fortify};
@@ -353,7 +355,7 @@
 							{\textcolor{mDarkTeal}{$\bullet$ owned} \quad
 								\textcolor{red!70}{$\bullet$ enemy}};
 						\end{tikzpicture}
-					}
+					
 				\end{center}
 				\vspace{0.3cm}
 				\begin{alertblock}{Caratteristica chiave}<6->
@@ -364,9 +366,11 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
+	\section{Stinky}
+
 	% ,,,- Stinky ,,,,,,,,,,,,,,,,,,,,
-	\begin{frame}{\centering Bot: \texttt{Stinky} , Strategia Opportunista}
+	\begin{frame}{\centering Bot: \texttt{Stinky}, Strategia Opportunista}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{block}{Strategia}<1->
@@ -422,9 +426,11 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
+
 	
+	\section{Communist}
 	% ,,,- Communist ,,,,,,,,,,,,,,,,,,,
-	\begin{frame}{\centering Bot: \texttt{Communist} , Strategia Egualitaria}
+	\begin{frame}{\centering Bot: \texttt{Communist}, Strategia Egualitaria}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{block}{Strategia}<1->
@@ -485,8 +491,9 @@
 		\end{columns}
 	\end{frame}
 	
+	\section{Cluster}
 	% ,,,- Cluster ,,,,,,,,,,,,,,,,,,,--
-	\begin{frame}{\centering Bot: \texttt{Cluster} , Strategia Continentale}
+	\begin{frame}{\centering Bot: \texttt{Cluster}, Strategia di Confine}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{block}{Strategia}<1->
@@ -518,7 +525,7 @@
 					in direzione dei confini, bilanciando le frontiere.
 				\end{block}
 				\begin{center}
-					\onslide <5-> {
+					
 						\begin{tikzpicture}[scale=0.85,
 							intr/.style={circle,draw,fill=customgreen!25,minimum size=7mm,font=\tiny},
 							bord/.style={circle,draw,fill=customgreen!60,minimum size=7mm,font=\tiny},
@@ -539,75 +546,93 @@
 								\textcolor{customgreen!80}{$\bullet$ interno \quad $\bullet$ confine} \;
 								\textcolor{red!60}{$\bullet$ nemico}};
 						\end{tikzpicture}
-					}
+					
 				\end{center}
 				\begin{alertblock}{Caratteristica chiave}<6->
 					\small
-					Mira al \alert{bonus continentale} espandendo
+					Mira ad \alert{espandere}
 					sistematicamente il cluster più grande.
 				\end{alertblock}
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+	\section{Pixie}
 	% ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
-	\begin{frame}{\centering Bot: \texttt{Pixie} , Strategia Proporzionale}
-		\begin{columns}[T]
-			\begin{column}{0.50\textwidth}
-				\begin{block}{Strategia}<1->
-					\small
-					Valuta per ogni continente se vale la pena investirvi risorse,
-					poi concentra gli attacchi \alert{sui continenti obiettivo}
-					dove può superare in numero i nemici.
-				\end{block}
-				\vspace{0.32cm}
-				\begin{block}{Place}<2->
-					\small
-					Distribuisce le armate \alert{tra i continenti ritenuti
-						profittevoli}. Se un continente è conquistabile con le
-					truppe disponibili, le riversa tutte lì; altrimenti
-					rinforza i continenti che ``hanno bisogno di aiuto''.
-				\end{block}
-				\vspace{0.32cm}
-				\begin{block}{Attack}<3->
-					\small
-					Scorre i continenti obiettivo ed esegue \alert{ogni attacco
-						possibile} in cui supera numericamente il nemico,
-					privilegiando il completamento del controllo continentale.
-				\end{block}
-			\end{column}
-			\begin{column}{0.46\textwidth}
-				\begin{block}{Fortify}<4->
-					\small
-					Sposta le truppe \alert{verso i confini} nei continenti 
-					posseduti, verso i nemici più deboli negli altri.
-				\end{block}
-				\onslide <5-> {
-					\begin{tcolorbox}[
-						enhanced,
-						colback=gray!4,
-						colframe=customgreen!70,
-						boxrule=0.5pt,
-						fonttitle=\bfseries\small,
-						title={Stima continente raggiungibile}]
-						\footnotesize
+\section{Pixie}
+% ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
+\begin{frame}{\centering Bot: \texttt{Pixie}, Strategia Continentale}
+    \begin{columns}[T]
+        \begin{column}{0.50\textwidth}
+            \begin{block}{Strategia}<1->
+                \small
+                Valuta per ogni continente se vale la pena investirvi risorse,
+                poi concentra gli attacchi \alert{sui continenti che reputa conquistabili}
+                dove può superare il numero di nemici.
+            \end{block}
+            \vspace{0.32cm}
+            \begin{block}{Place}<2->
+                \small
+                Distribuisce le armate \alert{tra i continenti ritenuti
+                    obiettivo}. Se un continente è conquistabile con le
+                truppe disponibili, le riversa tutte lì; altrimenti
+                rinforza i continenti che ``hanno bisogno di aiuto''.
+            \end{block}
+            \vspace{0.32cm}
+            \begin{block}{Attack}<3->
+                \small
+                Scorre i continenti obiettivo ed esegue \alert{ogni attacco
+                    possibile} in cui supera numericamente il nemico,
+                privilegiando il completamento del controllo continentale.
+            \end{block}
+        \end{column}
+        \begin{column}{0.46\textwidth}
+            \begin{block}{Fortify}<4->
+                \small
+                Sposta le truppe \alert{verso i confini} nei continenti 
+                posseduti, verso i nemici più deboli negli altri.
+            \end{block}
+            \onslide<5->{
+                \begin{tcolorbox}[
+                    enhanced,
+                    colback=gray!4,
+                    colframe=customgreen!70,
+                    boxrule=0.5pt,
+                    fonttitle=\bfseries\small,
+                    title={Stima continente}]
+                    \footnotesize
+                    \only<5,7>{%
+                        \begin{pseudocode}
+                            \pckw{for each} continent $c$ \pckw{do} \\
+                            \> \pckw{if} \textsc{ValeLaPena}($c$) \\
+                            \>\> \pckw{then} mark $c$ as \emph{target} \\
+                            \> distribuisci armate \\
+                            \>\> proporzionalmente \\
+                            \pckw{end for}
+                        \end{pseudocode}
+                    }%
+					\only<6>{%
+						\scriptsize
 						\begin{pseudocode}
-							\pckw{for each} continent $c$ \pckw{do} \\
-							\> \pckw{if} vale la pena investire \\
-							\>\> \pckw{then} mark $c$ as \emph{target} \\
-							\> distribuisci armate \\
-							\>\> proporzionalmente \\
-							\pckw{end for}
+							\pckw{function} \textsc{ValeLaPena}($c$) \\
+							\> $E \leftarrow \displaystyle\sum_{\text{paesi} \in c \setminus \text{miei}} \text{tr}(\text{paesi})$ \\
+							\> $M \leftarrow \displaystyle\sum_{\text{paesi} \in \text{miei}} \text{tr}(\text{paesi})$ \\
+							\> $\text{need} \leftarrow E - M$ \\
+							\> $B \leftarrow \{\text{paesi} \in \text{miei} \mid \text{paesi} \in \partial(c)\}$ \\
+							\> $\text{need} \leftarrow \text{need} - \displaystyle\sum_{\text{paesi} \in B} \text{tr}(\text{paesi})$ \\
+							\> \pckw{return} $\text{need} < \text{posizionabili}(c)$ \\
+							\pckw{end function}
 						\end{pseudocode}
-					\end{tcolorbox}
-				}
-				\begin{alertblock}{Caratteristica chiave}<6->
-					\small
-					\alert{Ragionamento esplicito sui continenti}: valuta i continenti per bilanciare espansione e difesa.
-				\end{alertblock}
-			\end{column}
-		\end{columns}
-	\end{frame}
+
+                    }%
+                \end{tcolorbox}
+            }
+            \begin{alertblock}{Caratteristica chiave}<7->
+                \small
+                \alert{Ragionamento esplicito sui continenti}: valuta i continenti per bilanciare espansione e difesa.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
 	
 	% =============================================================================
 	\section{Algoritmi per Giocatori Intelligenti}
