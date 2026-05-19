@@ -556,7 +556,7 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	\section{Pixie}
+
 	% ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
 \section{Pixie}
 % ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
@@ -600,7 +600,7 @@
                     fonttitle=\bfseries\small,
                     title={Stima continente}]
                     \footnotesize
-                    \only<5,7>{%
+                    \only<1-5,7>{%
                         \begin{pseudocode}
                             \pckw{for each} continent $c$ \pckw{do} \\
                             \> \pckw{if} \textsc{ValeLaPena}($c$) \\
@@ -611,21 +611,15 @@
                         \end{pseudocode}
                     }%
 					\only<6>{%
-						\scriptsize
-						\begin{pseudocode}
-							\pckw{function} \textsc{ValeLaPena}($c$) \\
-							\> $E \leftarrow \displaystyle\sum_{\text{paesi} \in c \setminus \text{miei}} \text{tr}(\text{paesi})$ \\
-							\> $M \leftarrow \displaystyle\sum_{\text{paesi} \in \text{miei}} \text{tr}(\text{paesi})$ \\
-							\> $\text{need} \leftarrow E - M$ \\
-							\> $B \leftarrow \{\text{paesi} \in \text{miei} \mid \text{paesi} \in \partial(c)\}$ \\
-							\> $\text{need} \leftarrow \text{need} - \displaystyle\sum_{\text{paesi} \in B} \text{tr}(\text{paesi})$ \\
-							\> \pckw{return} $\text{need} < \text{posizionabili}(c)$ \\
-							\pckw{end function}
-						\end{pseudocode}
-
-                    }%
+						\textsc{ValeLaPena}($c$):
+						dato il continente $c$
+						prendi il numero di truppe alleate nel territorio e nelle dirette vicinanze e sottrai a questo 
+						il numero di nemici nel continente dato. 
+						Se questa cifra risulta essere minore delle truppe che puoi piazzare allora vale la pena investivi risorse.
+						}%
                 \end{tcolorbox}
             }
+			
             \begin{alertblock}{Caratteristica chiave}<7->
                 \small
                 \alert{Ragionamento esplicito sui continenti}: valuta i continenti per bilanciare espansione e difesa.
@@ -670,7 +664,7 @@
 						\node[box,fill=mDarkTeal!20] (sp) at (0.45,3) {\texttt{SmartPlayer}};
 						\node[sub] (rl) at (-1.3,1.5) {\texttt{RLGA}};
 						\node[sub] (dp) at (2.4,1.5)  {\textit{(Other...)}};
-						\node[box,fill=gray!15] (bp) at (0.45,0)  {\texttt{Player (ABC)}};
+						\node[box,fill=gray!15] (bp) at (0.45,0)  {\texttt{Player}};
 						\draw[-Stealth,thick] (sp) -- (bp) node[midway,right,font=\tiny]{};
 						\draw[-Stealth,thick] (rl) -- (sp) node[midway,left,font=\tiny]{};
 						\draw[-Stealth,thick,dashed] (dp) -- (sp);
@@ -708,20 +702,20 @@
 						\vspace{0.2em}
 						\centering
 						\resizebox{\linewidth}{!}{%
-\begin{tabular}{c|ccccccccc}
-    \toprule
-    $s \,\backslash\, a$
-        & \texttt{atk$_1$} & \texttt{atk$_2$} & $\cdots$
-        & \texttt{frt$_1$} & \texttt{frt$_2$} & $\cdots$
-        & \texttt{plc$_1$} & \texttt{plc$_2$} & $\cdots$ \\
-    \midrule
-    $s_1$ & \cellcolor{customgreen!30}$0.8$ & $0.3$ & $\cdots$ & $0.2$ & $0.1$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ \\
-    $s_2$ & $0.1$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.9$ & $0.7$ & $\cdots$ & $0.3$ & $0.1$ & $\cdots$ \\
-    $s_3$ & $0.5$ & $0.3$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.7$ & $0.5$ & $\cdots$ \\
-    $\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
-    \bottomrule
-\end{tabular}%
-}
+						\begin{tabular}{c|ccccccccc}
+							\toprule
+							$s \,\backslash\, a$
+								& \texttt{atk$_1$} & \texttt{atk$_2$} & $\cdots$
+								& \texttt{frt$_1$} & \texttt{frt$_2$} & $\cdots$
+								& \texttt{plc$_1$} & \texttt{plc$_2$} & $\cdots$ \\
+							\midrule
+							$s_1$ & \cellcolor{customgreen!30}$0.8$ & $0.3$ & $\cdots$ & $0.2$ & $0.1$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ \\
+							$s_2$ & $0.1$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.9$ & $0.7$ & $\cdots$ & $0.3$ & $0.1$ & $\cdots$ \\
+							$s_3$ & $0.5$ & $0.3$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.7$ & $0.5$ & $\cdots$ \\
+							$\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
+							\bottomrule
+						\end{tabular}%
+						}
 					\end{tcolorbox}
 				}
 			\end{column}
@@ -766,7 +760,7 @@
 	
 	\section{Soluzione Scelta: RLGA}
 	% ,,,- RLGA ,,,,,,,,,,,,,,,,,,,,--
-	\begin{frame}{\centering Algoritmo: RLGA, Evoluzione Genetica}
+	\begin{frame}{\centering Ciclo Evolutivo}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{tcolorbox}[
@@ -803,11 +797,11 @@
 					pesi $\in \mathbb{R}$, inizializzati in $[-1, 1]$.
 				\end{block}
 				\vspace{0.1cm}
-				\begin{block}{Selezione macro}
+				\begin{block}{Selezione della macro}
 					\small
-					\alert{Softmax} sui pesi con temperatura $\tau$:
-					$P(\text{macro}_k) \propto e^{w_k/\tau}$.
-					Rimane \emph{stocastico} ma \emph{guidato dall'evoluzione}.
+					La macro $k$ viene scelta con probabilità proporzionale a $e^{w_k/\tau}$
+					(\alert{softmax} con temperatura $\tau$): pesi alti $\Rightarrow$ più probabile,
+					ma la scelta rimane \emph{stocastica} e \emph{guidata dall'evoluzione}.
 				\end{block}
 				\vspace{0.1cm}
 				\begin{block}{Operatori genetici}
@@ -824,7 +818,6 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
 	% =============================================================================
 	\section{Primi Risultati}
 	
@@ -832,10 +825,10 @@
 		
 		\begin{center}
 			\small
-			Partite a 4 giocatori $\cdot$ mappa standard Risk $\cdot$
+			1000 partite a 4 giocatori $\cdot$ mappa standard Risk $\cdot$
 			100 turni massimi $\cdot$ seed fisso per riproducibilità
-		\end{center}
-		
+		\end{center} 
+
 		\vspace{0.2cm}
 		
 		\begin{adjustbox}{width=\textwidth}
@@ -844,21 +837,23 @@
 			\begin{tabular}{lcccccc}
 				\toprule
 				\textbf{Bot} & \textbf{Win\%} & \textbf{Avg Rank} & \textbf{Avg Territories}
-				& \textbf{Avg Armies} & \textbf{Survived\%} & \textbf{Style} \\
+				& \textbf{Avg Armies} & \textbf{Survived\%}\\
 				\midrule
-				Angry    & 9.03\% & 3.39 & 7.22 & 11.61 & 13.22\% & Aggressivo \\
-				Stinky   & 28.42\% & 2.44 & 12.6 & 63.97 & 41.19\% & Opportunista \\
-				Communist& 8.79\% & 3.04 & 3.77 & 154.41 & 18.57\% & Egualitario \\
-				Cluster  & 19.83\% & 2.42 & 7.27 & 313.81 & 36.7\% & Continentale \\
-				Pixie    & 11.07\% & 2.23 & 5.3 & 242.36 & 39.34\% & Proporzionale \\
-				\textbf{RLGA} & \textbf{54.5\%} & \textbf{1.86} & \textbf{22.64} & \textbf{269.14}
-				& \textbf{69.3\%} & Evolutivo \\
+				Angry  (Aggressivo)  & 9.03\% & 3.39 & 7.22 & 11.61 & 13.22\%  \\
+				Stinky (Opportunista)  & 28.42\% & 2.44 & 12.6 & 63.97 & 41.19\% \\
+				Communist (Egualitario)& 8.79\% & 3.04 & 3.77 & 154.41 & 18.57\%  \\
+				Cluster (Confine) & 19.83\% & 2.42 & 7.27 & 313.81 & 36.7\% \\
+				Pixie (Continentale)    & 11.07\% & 2.23 & 5.3 & 242.36 & 39.34\% \\
+				\textbf{RLGA} (Evolutivo) & \textbf{54.5\%} & \textbf{1.86} & \textbf{22.64} & \textbf{269.14}
+				& \textbf{69.3\%}\\
 				\bottomrule
 			\end{tabular}
 		\end{adjustbox}
 		
 		\begin{flushleft}
-			\tiny Risultati preliminari , dati da completare con le simulazioni finali.
+			\tiny Tabella contenente nome bot, percentuale winrate, media posizione in classifica,
+			media territori posseduti a fine partita, media armate a fine partita
+			percentuale di sopravvivenza nelle 1000 partite.
 		\end{flushleft}
 		
 		\vspace{0.2cm}
