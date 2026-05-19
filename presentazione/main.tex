@@ -64,6 +64,21 @@
 \newcommand\Bstrut{\rule[-1.2ex]{0pt}{0pt}}
 \newcolumntype{x}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
 
+\definecolor{placebg}{HTML}{E1F5EE}
+\definecolor{placetxt}{HTML}{085041}
+\definecolor{placeacc}{HTML}{1D9E75}
+\definecolor{attackbg}{HTML}{E6F1FB}
+\definecolor{attacktxt}{HTML}{0C447C}
+\definecolor{attackacc}{HTML}{378ADD}
+\definecolor{fortifybg}{HTML}{FAEEDA}
+\definecolor{fortifytxt}{HTML}{633806}
+\definecolor{fortifyacc}{HTML}{BA7517}
+\definecolor{ellipsisbg}{HTML}{F5F5F3}
+\definecolor{ellipsistxt}{HTML}{888780}
+ 
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+
 % ── Pseudocodice semplice ─────────────────────────────────────────────────────
 \newenvironment{pseudocode}{%
 	\begin{tabbing}%
@@ -716,6 +731,20 @@
 							\bottomrule
 						\end{tabular}%
 						}
+						\begin{tabular}{c|ccccccccc}
+							\toprule
+							$s \,\backslash\, a$
+								& \texttt{atk$_1$} & \texttt{atk$_2$} & $\cdots$
+								& \texttt{frt$_1$} & \texttt{frt$_2$} & $\cdots$
+								& \texttt{plc$_1$} & \texttt{plc$_2$} & $\cdots$ \\
+							\midrule
+							$s_1$ & \cellcolor{customgreen!30}$0.8$ & $0.3$ & $\cdots$ & $0.2$ & $0.1$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ \\
+							$s_2$ & $0.1$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.9$ & $0.7$ & $\cdots$ & $0.3$ & $0.1$ & $\cdots$ \\
+							$s_3$ & $0.5$ & $0.3$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.7$ & $0.5$ & $\cdots$ \\
+							$\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
+							\bottomrule
+						\end{tabular}%
+						}
 					\end{tcolorbox}
 				}
 			\end{column}
@@ -818,6 +847,67 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
+
+\begin{frame}{\centering Genoma}
+\vfill
+\begin{center}
+\scalebox{0.567}{%
+\begin{tikzpicture}[
+  cell/.style={
+    rectangle,
+    minimum width=1.6cm,
+    minimum height=1.4cm,
+    inner sep=2pt,
+    draw=white,
+    line width=1.5pt
+  },
+  val/.style={font=\normalsize\bfseries},
+  lbl/.style={font=\footnotesize}
+]
+ 
+% --- PLACE cells ---
+\foreach \i/\v/\n in {0/2.08/cluster, 1/0.25/weakest, 2/0.19/continent} {
+  \node[cell, fill=placebg] at (\i*1.75, 0) {};
+  \node[val, text=placetxt] at (\i*1.75,  0.22) {\v};
+  \node[lbl, text=placetxt] at (\i*1.75, -0.28) {\n};
+}
+\node[cell, fill=ellipsisbg] at (3*1.75, 0) {};
+\node[text=ellipsistxt, font=\Large] at (3*1.75, 0) {$\cdots$};
+ 
+\draw[white, line width=4pt] (3*1.75+0.9, -0.75) -- (3*1.75+0.9, 0.75);
+ 
+% --- ATTACK cells ---
+\foreach \i/\v/\n in {0/2.38/split, 1/1.38/communist, 2/1.29/stinky, 3/0.04/angry} {
+  \pgfmathsetmacro{\x}{4*1.75 + \i*1.75}
+  \node[cell, fill=attackbg] at (\x, 0) {};
+  \node[val, text=attacktxt] at (\x,  0.22) {\v};
+  \node[lbl, text=attacktxt] at (\x, -0.28) {\n};
+}
+\node[cell, fill=ellipsisbg] at (8*1.75, 0) {};
+\node[text=ellipsistxt, font=\Large] at (8*1.75, 0) {$\cdots$};
+ 
+\draw[white, line width=4pt] (8*1.75+0.9, -0.75) -- (8*1.75+0.9, 0.75);
+ 
+% --- FORTIFY cells ---
+\foreach \i/\v/\n in {0/2.05/communist, 1/1.11/pixie, 2/0.92/border} {
+  \pgfmathsetmacro{\x}{9*1.75 + \i*1.75}
+  \node[cell, fill=fortifybg] at (\x, 0) {};
+  \node[val, text=fortifytxt] at (\x,  0.22) {\v};
+  \node[lbl, text=fortifytxt] at (\x, -0.28) {\n};
+}
+ 
+% --- Legend ---
+\node[right] at (0, -1.1) {%
+  \textcolor{placeacc}{\rule{0.6em}{0.6em}}~{\small place}\quad
+  \textcolor{attackacc}{\rule{0.6em}{0.6em}}~{\small attack}\quad
+  \textcolor{fortifyacc}{\rule{0.6em}{0.6em}}~{\small fortify}
+};
+ 
+\end{tikzpicture}
+}% end scalebox
+\end{center}
+\vfill
+\end{frame}
 	% =============================================================================
 	\section{Primi Risultati}
 	
