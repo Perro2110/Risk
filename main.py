@@ -8,9 +8,14 @@ from Risk.players.cluster import Cluster
 from Risk.players.angry import Angry
 from Risk.players.rlga import RLGA
 import random
-import os
+import os, sys
 import glob
 
+SEED = 9
+random.seed(SEED)
+if os.environ.get("PYTHONHASHSEED") != "0":
+    os.environ["PYTHONHASHSEED"] = "0"
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 ALL_BOTS: list[type] = [
     Stinky,
