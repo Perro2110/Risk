@@ -75,9 +75,8 @@
 \definecolor{fortifyacc}{HTML}{BA7517}
 \definecolor{ellipsisbg}{HTML}{F5F5F3}
 \definecolor{ellipsistxt}{HTML}{888780}
- 
-\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 
 % ── Pseudocodice semplice ─────────────────────────────────────────────────────
 \newenvironment{pseudocode}{%
@@ -118,29 +117,25 @@
 
 % =============================================================================
 \begin{document}
-	
+
 	% ── Copertina ────────────────────────────────────────────────────────────────
-	% ── Copertina migliorata ────────────────────────────────────────────────
 	\begin{frame}[plain, noframenumbering]
-		
+
 		\begin{center}
 			\vspace{0.8cm}
-			
-			% Titolo
+
 			{\usebeamerfont{title}
 				\color{customgreen}
 				\LARGE\textbf{Un Framework Intelligente per lo Sviluppo}\\[0.2cm]
 				\LARGE\textbf{di Giocatori e Simulazione del Gioco Risk}
 			}
-			
+
 			\vspace{0.8cm}
-			
-			% Sottolineatura elegante
+
 			\color{customgreen}\rule{0.6\textwidth}{0.5pt}
-			
+
 			\vspace{1cm}
-			
-			% Autori
+
 			{\color{darkgray}\large
 				\textsc{Alice Zalambani},
 				\textsc{Davide Caravita},
@@ -148,33 +143,30 @@
 				\textsc{Lorenzo Negrini},
 				\textsc{Marco Perrotta}
 			}
-			
+
 			\vspace{0.9cm}
 			\vspace{1.2cm}
-			
-			% Università
+
 			{\color{darkgray}\normalsize
 				Department of Mathematics and Computer Science\\
 				University of Ferrara
 			}
-			
+
 			\vfill
-			
-			% Anno
+
 			{\color{lightgray}2026}
-			
+
 		\end{center}
-		
-		% Logo in basso a destra (più discreto)
+
 		\begin{tikzpicture}[overlay, remember picture]
 			\node[at=(current page.south east), anchor=south east,
 			xshift=-0.5cm, yshift=0.5cm]{%
 				%\includegraphics[width=.14\textwidth]{unife.png}%
 			};
 		\end{tikzpicture}
-		
+
 	\end{frame}
-	
+
 	% ── Indice ────────────────────────────────────────────────────────────────────
 	\begin{frame}
 		\frametitle{Outline}
@@ -193,10 +185,10 @@
 			\end{itemize}
 		\end{center}
 	\end{frame}
-	
+
 	% =============================================================================
 	\section{Introduzione \& Motivazione}
-	
+
 	\begin{frame}{\centering Introduzione \& Motivazione}
 		\textbf{Il contesto:}
 		\begin{itemize}
@@ -207,7 +199,7 @@
 			\item La complessità del dominio lo rende un \alert{benchmark impegnativo}
 			per metodi di apprendimento automatico.
 		\end{itemize}
-		
+
 		\vspace{0.1cm}
 		\textbf{Obiettivi:}
 		\begin{itemize}
@@ -217,13 +209,11 @@
 			\\ tali strategie, \alert{hand-coded}, offrono un punto di riferimento, \alert{ma}
 			non apprendono né si adattano, si vogliono superare tali limiti.
 		\end{itemize}
-		
-		
 	\end{frame}
-	
+
 	% =============================================================================
 	\section{Modellazione del Gioco}
-	
+
 	\begin{frame}{\centering Modellazione del Gioco , Struttura}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -250,12 +240,12 @@
 						arr/.style={-Stealth,thick,customgreen}]
 						\node[box] (game)  at (0,3.7)    {\texttt{Game}};
 						\node[box] (gs)    at (0,2.3)    {\texttt{GameState}};
-						\node[box] (map)   at (-1.5,1) {\texttt{Map}};
+						\node[box] (map)   at (-1.5,1)   {\texttt{Map}};
 						\node[box] (cont)  at (-1.5,-0.25) {\texttt{Continent}};
 						\node[box] (coun)  at (-1.5,-1.5){\texttt{Country}};
 						\node[box] (act)   at (2.03,-1.5)  {\texttt{Action}};
-						\node[box] (play)  at (2,1)  {\texttt{Player}};
-						
+						\node[box] (play)  at (2,1)      {\texttt{Player}};
+
 						\draw[arr] (game)  -- (gs);
 						\draw[arr] (gs)    -- (map);
 						\draw[arr] (gs)    -- (play);
@@ -268,9 +258,8 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	\begin{frame}{\centering Modellazione del Gioco: Turno}
-		
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{tcolorbox}[
@@ -297,7 +286,7 @@
 					\end{pseudocode}
 				\end{tcolorbox}
 			\end{column}
-			
+
 			\begin{column}{0.46\textwidth}
 				\vspace{0.1cm}
 				\begin{block}{Fasi del turno}
@@ -320,12 +309,11 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	% =============================================================================
 	\section{Bot dalla Letteratura}
-	
+
 	\section{Angry}
-	% ,,,- Angry ,,,,,,,,,,,,,,,,,,,,--
 	\begin{frame}{\centering Bot: \texttt{Angry}, Strategia Aggressiva}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -354,23 +342,21 @@
 			\end{column}
 			\begin{column}{0.46\textwidth}
 				\begin{center}
-					
-						\begin{tikzpicture}[scale=0.9,
-							own/.style={circle,draw,fill=mDarkTeal!30,minimum size=8mm,font=\tiny},
-							enemy/.style={circle,draw,fill=red!30,minimum size=8mm,font=\tiny},
-							arr/.style={-Stealth,thick,customgreen}]
-							\node[own]   (a) at (0,0)    {$A_2$};
-							\node[enemy] (e1) at (2,0.8) {$E_1$};
-							\node[enemy] (e2) at (2,-0.8){$E_2$};
-							\node[own]   (b) at (-2,0)   {$A_1$};
-							\draw[-] (a) -- (e1);
-							\draw[arr,dashed,red!70] (a) -- (e2) node[midway,above=2pt,font=\tiny]{attack};
-							\draw[arr,dashed,blue!60] (b) -- (a) node[midway,above,font=\tiny]{fortify};
-							\node[font=\tiny,text=mDarkTeal] at (0,-1.6)
-							{\textcolor{mDarkTeal}{$\bullet$ owned} \quad
-								\textcolor{red!70}{$\bullet$ enemy}};
-						\end{tikzpicture}
-					
+					\begin{tikzpicture}[scale=0.9,
+						own/.style={circle,draw,fill=mDarkTeal!30,minimum size=8mm,font=\tiny},
+						enemy/.style={circle,draw,fill=red!30,minimum size=8mm,font=\tiny},
+						arr/.style={-Stealth,thick,customgreen}]
+						\node[own]   (a) at (0,0)    {$A_2$};
+						\node[enemy] (e1) at (2,0.8) {$E_1$};
+						\node[enemy] (e2) at (2,-0.8){$E_2$};
+						\node[own]   (b) at (-2,0)   {$A_1$};
+						\draw[-] (a) -- (e1);
+						\draw[arr,dashed,red!70] (a) -- (e2) node[midway,above=2pt,font=\tiny]{attack};
+						\draw[arr,dashed,blue!60] (b) -- (a) node[midway,above,font=\tiny]{fortify};
+						\node[font=\tiny,text=mDarkTeal] at (0,-1.6)
+						{\textcolor{mDarkTeal}{$\bullet$ owned} \quad
+							\textcolor{red!70}{$\bullet$ enemy}};
+					\end{tikzpicture}
 				\end{center}
 				\vspace{0.3cm}
 				\begin{alertblock}{Caratteristica chiave}<6->
@@ -383,8 +369,6 @@
 	\end{frame}
 
 	\section{Stinky}
-
-	% ,,,- Stinky ,,,,,,,,,,,,,,,,,,,,
 	\begin{frame}{\centering Bot: \texttt{Stinky}, Strategia Opportunista}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -416,7 +400,7 @@
 			\end{column}
 			\begin{column}{0.46\textwidth}
 				\vspace{0.3cm}
-				\onslide <5->{
+				\onslide<5->{
 					\begin{tcolorbox}[
 						enhanced,
 						colback=yellow!15,
@@ -442,9 +426,7 @@
 		\end{columns}
 	\end{frame}
 
-	
 	\section{Communist}
-	% ,,,- Communist ,,,,,,,,,,,,,,,,,,,
 	\begin{frame}{\centering Bot: \texttt{Communist}, Strategia Egualitaria}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -477,7 +459,7 @@
 					spostamenti bilanciano i paesi al di sopra e al di sotto
 					di questa media.
 				\end{block}
-				\onslide <5-> {
+				\onslide<5->{
 					\begin{tcolorbox}[
 						enhanced,
 						colback=red!8,
@@ -500,14 +482,13 @@
 				\begin{alertblock}{Caratteristica chiave}<6->
 					\small
 					\alert{Non attacca altri Communist} se esistono avversari di
-					altro tipo , emulando una coalizione implicita.
+					altro tipo, emulando una coalizione implicita.
 				\end{alertblock}
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	\section{Cluster}
-	% ,,,- Cluster ,,,,,,,,,,,,,,,,,,,--
 	\begin{frame}{\centering Bot: \texttt{Cluster}, Strategia di Confine}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -531,7 +512,6 @@
 					\alert{meno armate}. Dopo la conquista, le truppe vengono
 					spostate verso il paese con il vicino nemico più debole.
 				\end{block}
-				\vspace{0.42cm}
 			\end{column}
 			\begin{column}{0.46\textwidth}
 				\begin{block}{Fortify}<4->
@@ -540,28 +520,26 @@
 					in direzione dei confini, bilanciando le frontiere.
 				\end{block}
 				\begin{center}
-					
-						\begin{tikzpicture}[scale=0.85,
-							intr/.style={circle,draw,fill=customgreen!25,minimum size=7mm,font=\tiny},
-							bord/.style={circle,draw,fill=customgreen!60,minimum size=7mm,font=\tiny},
-							enemy/.style={circle,draw,fill=red!25,minimum size=7mm,font=\tiny}]
-							
-							\node[intr]  (i1) at (0,0)     {int};
-							\node[intr]  (i2) at (1,0.6)   {int};
-							\node[bord]  (b1) at (-1,0.8)  {brd};
-							\node[bord]  (b2) at (0.5,-1)  {brd};
-							\node[enemy] (e1) at (-2,0.8)  {E};
-							\node[enemy] (e2) at (1,-2)    {E};
-							
-							\draw (i1)--(i2); \draw (i1)--(b1); \draw (i1)--(b2);
-							\draw (i2)--(b1);
-							\draw[dashed,red!60] (b1)--(e1);
-							\draw[dashed,red!60] (b2)--(e2);
-							\node[font=\tiny] at (0,-3){
-								\textcolor{customgreen!80}{$\bullet$ interno \quad $\bullet$ confine} \;
-								\textcolor{red!60}{$\bullet$ nemico}};
-						\end{tikzpicture}
-					
+					\begin{tikzpicture}[scale=0.85,
+						intr/.style={circle,draw,fill=customgreen!25,minimum size=7mm,font=\tiny},
+						bord/.style={circle,draw,fill=customgreen!60,minimum size=7mm,font=\tiny},
+						enemy/.style={circle,draw,fill=red!25,minimum size=7mm,font=\tiny}]
+
+						\node[intr]  (i1) at (0,0)     {int};
+						\node[intr]  (i2) at (1,0.6)   {int};
+						\node[bord]  (b1) at (-1,0.8)  {brd};
+						\node[bord]  (b2) at (0.5,-1)  {brd};
+						\node[enemy] (e1) at (-2,0.8)  {E};
+						\node[enemy] (e2) at (1,-2)    {E};
+
+						\draw (i1)--(i2); \draw (i1)--(b1); \draw (i1)--(b2);
+						\draw (i2)--(b1);
+						\draw[dashed,red!60] (b1)--(e1);
+						\draw[dashed,red!60] (b2)--(e2);
+						\node[font=\tiny] at (0,-3){
+							\textcolor{customgreen!80}{$\bullet$ interno \quad $\bullet$ confine} \;
+							\textcolor{red!60}{$\bullet$ nemico}};
+					\end{tikzpicture}
 				\end{center}
 				\begin{alertblock}{Caratteristica chiave}<6->
 					\small
@@ -572,82 +550,78 @@
 		\end{columns}
 	\end{frame}
 
-	% ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
-\section{Pixie}
-% ,,,- Pixie ,,,,,,,,,,,,,,,,,,,,-
-\begin{frame}{\centering Bot: \texttt{Pixie}, Strategia Continentale}
-    \begin{columns}[T]
-        \begin{column}{0.50\textwidth}
-            \begin{block}{Strategia}<1->
-                \small
-                Valuta per ogni continente se vale la pena investirvi risorse,
-                poi concentra gli attacchi \alert{sui continenti che reputa conquistabili}
-                dove può superare il numero di nemici.
-            \end{block}
-            \vspace{0.32cm}
-            \begin{block}{Place}<2->
-                \small
-                Distribuisce le armate \alert{tra i continenti ritenuti
-                    obiettivo}. Se un continente è conquistabile con le
-                truppe disponibili, le riversa tutte lì; altrimenti
-                rinforza i continenti che ``hanno bisogno di aiuto''.
-            \end{block}
-            \vspace{0.32cm}
-            \begin{block}{Attack}<3->
-                \small
-                Scorre i continenti obiettivo ed esegue \alert{ogni attacco
-                    possibile} in cui supera numericamente il nemico,
-                privilegiando il completamento del controllo continentale.
-            \end{block}
-        \end{column}
-        \begin{column}{0.46\textwidth}
-            \begin{block}{Fortify}<4->
-                \small
-                Sposta le truppe \alert{verso i confini} nei continenti 
-                posseduti, verso i nemici più deboli negli altri.
-            \end{block}
-            \onslide<5->{
-                \begin{tcolorbox}[
-                    enhanced,
-                    colback=gray!4,
-                    colframe=customgreen!70,
-                    boxrule=0.5pt,
-                    fonttitle=\bfseries\small,
-                    title={Stima continente}]
-                    \footnotesize
-                    \only<1-5,7>{%
-                        \begin{pseudocode}
-                            \pckw{for each} continent $c$ \pckw{do} \\
-                            \> \pckw{if} \textsc{ValeLaPena}($c$) \\
-                            \>\> \pckw{then} mark $c$ as \emph{target} \\
-                            \> distribuisci armate \\
-                            \>\> proporzionalmente \\
-                            \pckw{end for}
-                        \end{pseudocode}
-                    }%
-					\only<6>{%
-						\textsc{ValeLaPena}($c$):
-						dato il continente $c$
-						prendi il numero di truppe alleate nel territorio e nelle dirette vicinanze e sottrai a questo 
-						il numero di nemici nel continente dato. 
-						Se questa cifra risulta essere minore delle truppe che puoi piazzare allora vale la pena investivi risorse.
+	\section{Pixie}
+	\begin{frame}{\centering Bot: \texttt{Pixie}, Strategia Continentale}
+		\begin{columns}[T]
+			\begin{column}{0.50\textwidth}
+				\begin{block}{Strategia}<1->
+					\small
+					Valuta per ogni continente se vale la pena investirvi risorse,
+					poi concentra gli attacchi \alert{sui continenti che reputa conquistabili}
+					dove può superare il numero di nemici.
+				\end{block}
+				\vspace{0.32cm}
+				\begin{block}{Place}<2->
+					\small
+					Distribuisce le armate \alert{tra i continenti ritenuti
+						obiettivo}. Se un continente è conquistabile con le
+					truppe disponibili, le riversa tutte lì; altrimenti
+					rinforza i continenti che ``hanno bisogno di aiuto''.
+				\end{block}
+				\vspace{0.32cm}
+				\begin{block}{Attack}<3->
+					\small
+					Scorre i continenti obiettivo ed esegue \alert{ogni attacco
+						possibile} in cui supera numericamente il nemico,
+					privilegiando il completamento del controllo continentale.
+				\end{block}
+			\end{column}
+			\begin{column}{0.46\textwidth}
+				\begin{block}{Fortify}<4->
+					\small
+					Sposta le truppe \alert{verso i confini} nei continenti
+					posseduti, verso i nemici più deboli negli altri.
+				\end{block}
+				\onslide<5->{
+					\begin{tcolorbox}[
+						enhanced,
+						colback=gray!4,
+						colframe=customgreen!70,
+						boxrule=0.5pt,
+						fonttitle=\bfseries\small,
+						title={Stima continente}]
+						\footnotesize
+						\only<1-5,7>{%
+							\begin{pseudocode}
+								\pckw{for each} continent $c$ \pckw{do} \\
+								\> \pckw{if} \textsc{ValeLaPena}($c$) \\
+								\>\> \pckw{then} mark $c$ as \emph{target} \\
+								\> distribuisci armate \\
+								\>\> proporzionalmente \\
+								\pckw{end for}
+							\end{pseudocode}
 						}%
-                \end{tcolorbox}
-            }
-			
-            \begin{alertblock}{Caratteristica chiave}<7->
-                \small
-                \alert{Ragionamento esplicito sui continenti}: valuta i continenti per bilanciare espansione e difesa.
-            \end{alertblock}
-        \end{column}
-    \end{columns}
-\end{frame}
-	
+						\only<6>{%
+							\textsc{ValeLaPena}($c$):
+							dato il continente $c$
+							prendi il numero di truppe alleate nel territorio e nelle dirette vicinanze e sottrai a questo
+							il numero di nemici nel continente dato.
+							Se questa cifra risulta essere minore delle truppe che puoi piazzare allora vale la pena investivi risorse.
+						}%
+					\end{tcolorbox}
+				}
+				\begin{alertblock}{Caratteristica chiave}<7->
+					\small
+					\alert{Ragionamento esplicito sui continenti}: valuta i continenti per bilanciare espansione e difesa.
+				\end{alertblock}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
 	% =============================================================================
 	\section{Algoritmi per Giocatori Intelligenti}
-	
+
 	\begin{frame}{\centering Architettura: \texttt{SmartPlayer}}
-		
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
 				\begin{block}{Macro-azioni}
@@ -694,10 +668,9 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	\begin{frame}{\centering Altri tentativi...}
 		\begin{columns}[T]
-			% ---- colonna sinistra: RL ----
 			\begin{column}{0.48\textwidth}
 				\begin{block}{Reinforcement Learning}<1->
 					\small
@@ -731,27 +704,14 @@
 							\bottomrule
 						\end{tabular}%
 						}
-						\begin{tabular}{c|ccccccccc}
-							\toprule
-							$s \,\backslash\, a$
-								& \texttt{atk$_1$} & \texttt{atk$_2$} & $\cdots$
-								& \texttt{frt$_1$} & \texttt{frt$_2$} & $\cdots$
-								& \texttt{plc$_1$} & \texttt{plc$_2$} & $\cdots$ \\
-							\midrule
-							$s_1$ & \cellcolor{customgreen!30}$0.8$ & $0.3$ & $\cdots$ & $0.2$ & $0.1$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ \\
-							$s_2$ & $0.1$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.9$ & $0.7$ & $\cdots$ & $0.3$ & $0.1$ & $\cdots$ \\
-							$s_3$ & $0.5$ & $0.3$ & $\cdots$ & $0.4$ & $0.2$ & $\cdots$ & \cellcolor{customgreen!30}$0.7$ & $0.5$ & $\cdots$ \\
-							$\vdots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ & $\vdots$ & $\vdots$ & $\ddots$ \\
-							\bottomrule
-						\end{tabular}%
-						}
 					\end{tcolorbox}
 				}
 			\end{column}
 
-			% ---- colonna destra: Online Boosting ----
 			\begin{column}{0.48\textwidth}
-				\begin{block}{Addestramento incrementale} di alberi decisionali
+				\begin{block}{Addestramento incrementale}<1->
+					\small
+					Addestramento di alberi decisionali
 					\emph{durante} le partite, per coprire situazioni
 					mai incontrate o gestite male.
 				\end{block}
@@ -786,9 +746,68 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	\section{Soluzione Scelta: RLGA}
-	% ,,,- RLGA ,,,,,,,,,,,,,,,,,,,,--
+		\begin{frame}{\centering Genoma}
+		\vfill
+		\begin{center}
+		\scalebox{0.567}{%
+		\begin{tikzpicture}[
+		  cell/.style={
+		    rectangle,
+		    minimum width=1.6cm,
+		    minimum height=1.4cm,
+		    inner sep=2pt,
+		    draw=white,
+		    line width=1.5pt
+		  },
+		  val/.style={font=\normalsize\bfseries},
+		  lbl/.style={font=\footnotesize}
+		]
+
+		% --- PLACE cells ---
+		\foreach \i/\v/\n in {0/2.08/cluster, 1/0.25/weakest, 2/0.19/continent} {
+		  \node[cell, fill=placebg] at (\i*1.75, 0) {};
+		  \node[val, text=placetxt] at (\i*1.75,  0.22) {\v};
+		  \node[lbl, text=placetxt] at (\i*1.75, -0.28) {\n};
+		}
+		\node[cell, fill=ellipsisbg] at (3*1.75, 0) {};
+		\node[text=ellipsistxt, font=\Large] at (3*1.75, 0) {$\cdots$};
+
+		\draw[white, line width=4pt] (3*1.75+0.9, -0.75) -- (3*1.75+0.9, 0.75);
+
+		% --- ATTACK cells ---
+		\foreach \i/\v/\n in {0/2.38/split, 1/1.38/communist, 2/1.29/stinky, 3/0.04/angry} {
+		  \pgfmathsetmacro{\x}{4*1.75 + \i*1.75}
+		  \node[cell, fill=attackbg] at (\x, 0) {};
+		  \node[val, text=attacktxt] at (\x,  0.22) {\v};
+		  \node[lbl, text=attacktxt] at (\x, -0.28) {\n};
+		}
+		\node[cell, fill=ellipsisbg] at (8*1.75, 0) {};
+		\node[text=ellipsistxt, font=\Large] at (8*1.75, 0) {$\cdots$};
+
+		\draw[white, line width=4pt] (8*1.75+0.9, -0.75) -- (8*1.75+0.9, 0.75);
+
+		% --- FORTIFY cells ---
+		\foreach \i/\v/\n in {0/2.05/communist, 1/1.11/pixie, 2/0.92/border} {
+		  \pgfmathsetmacro{\x}{9*1.75 + \i*1.75}
+		  \node[cell, fill=fortifybg] at (\x, 0) {};
+		  \node[val, text=fortifytxt] at (\x,  0.22) {\v};
+		  \node[lbl, text=fortifytxt] at (\x, -0.28) {\n};
+		}
+
+		% --- Legend ---
+		\node[right] at (0, -1.1) {%
+		  \textcolor{placeacc}{\rule{0.6em}{0.6em}}~{\small place}\quad
+		  \textcolor{attackacc}{\rule{0.6em}{0.6em}}~{\small attack}\quad
+		  \textcolor{fortifyacc}{\rule{0.6em}{0.6em}}~{\small fortify}
+		};
+
+		\end{tikzpicture}
+		}% end scalebox
+		\end{center}
+		\vfill
+	\end{frame}
 	\begin{frame}{\centering Ciclo Evolutivo}
 		\begin{columns}[T]
 			\begin{column}{0.50\textwidth}
@@ -806,7 +825,7 @@
 						\> \pckw{for each} $a \in P$ \pckw{do} \\
 						\>\> $f(a) \leftarrow$ win-rate su $K$ partite \\
 						\> \pckw{end for} \\[2pt]
-						\> $P' \leftarrow \{$élite$\}$ \\
+						\> $P' \leftarrow \{$\'{e}lite$\}$ \\
 						\> \pckw{while} $|P'| < |P|$ \pckw{do} \\
 						\>\> $a,b \leftarrow$ TournamentSelect$(P,f)$ \\
 						\>\> $c_1,c_2 \leftarrow$ Crossover$(a,b)$ \\
@@ -828,8 +847,8 @@
 				\vspace{0.1cm}
 				\begin{block}{Selezione della macro}
 					\small
-					La macro $k$ viene scelta con probabilità proporzionale a $e^{w_k/\tau}$
-					(\alert{softmax} con temperatura $\tau$): pesi alti $\Rightarrow$ più probabile,
+					La macro $k$ viene scelta con probabilità proporzionale
+					(\alert{softmax}): pesi alti $\Rightarrow$ più probabile,
 					ma la scelta rimane \emph{stocastica} e \emph{guidata dall'evoluzione}.
 				\end{block}
 				\vspace{0.1cm}
@@ -839,8 +858,10 @@
 						\setlength{\itemsep}{2pt}
 						\item \textbf{Crossover uniforme}: ogni gene da un genitore
 						con prob.\ 0.5.
-						\item \textbf{Mutazione gaussiana}: $w \mathrel{+}= \mathcal{N}(0,\sigma)$
-						con prob.\ $p_m$; clamp in $[-3, 3]$.
+						\item \textbf{Mutazione gaussiana}: ad ogni peso $w$ del genoma,
+						con probabilità $p_m$, viene sommato un piccolo rumore casuale
+						$w \mathrel{+}= \mathcal{N}(0,\sigma)$; il risultato \\ viene
+						poi limitato all'intervallo $[-3, 3]$.
 						\item \textbf{Élitismo}: il migliore sopravvive sempre.
 					\end{itemize}
 				\end{block}
@@ -848,79 +869,19 @@
 		\end{columns}
 	\end{frame}
 
-\begin{frame}{\centering Genoma}
-\vfill
-\begin{center}
-\scalebox{0.567}{%
-\begin{tikzpicture}[
-  cell/.style={
-    rectangle,
-    minimum width=1.6cm,
-    minimum height=1.4cm,
-    inner sep=2pt,
-    draw=white,
-    line width=1.5pt
-  },
-  val/.style={font=\normalsize\bfseries},
-  lbl/.style={font=\footnotesize}
-]
- 
-% --- PLACE cells ---
-\foreach \i/\v/\n in {0/2.08/cluster, 1/0.25/weakest, 2/0.19/continent} {
-  \node[cell, fill=placebg] at (\i*1.75, 0) {};
-  \node[val, text=placetxt] at (\i*1.75,  0.22) {\v};
-  \node[lbl, text=placetxt] at (\i*1.75, -0.28) {\n};
-}
-\node[cell, fill=ellipsisbg] at (3*1.75, 0) {};
-\node[text=ellipsistxt, font=\Large] at (3*1.75, 0) {$\cdots$};
- 
-\draw[white, line width=4pt] (3*1.75+0.9, -0.75) -- (3*1.75+0.9, 0.75);
- 
-% --- ATTACK cells ---
-\foreach \i/\v/\n in {0/2.38/split, 1/1.38/communist, 2/1.29/stinky, 3/0.04/angry} {
-  \pgfmathsetmacro{\x}{4*1.75 + \i*1.75}
-  \node[cell, fill=attackbg] at (\x, 0) {};
-  \node[val, text=attacktxt] at (\x,  0.22) {\v};
-  \node[lbl, text=attacktxt] at (\x, -0.28) {\n};
-}
-\node[cell, fill=ellipsisbg] at (8*1.75, 0) {};
-\node[text=ellipsistxt, font=\Large] at (8*1.75, 0) {$\cdots$};
- 
-\draw[white, line width=4pt] (8*1.75+0.9, -0.75) -- (8*1.75+0.9, 0.75);
- 
-% --- FORTIFY cells ---
-\foreach \i/\v/\n in {0/2.05/communist, 1/1.11/pixie, 2/0.92/border} {
-  \pgfmathsetmacro{\x}{9*1.75 + \i*1.75}
-  \node[cell, fill=fortifybg] at (\x, 0) {};
-  \node[val, text=fortifytxt] at (\x,  0.22) {\v};
-  \node[lbl, text=fortifytxt] at (\x, -0.28) {\n};
-}
- 
-% --- Legend ---
-\node[right] at (0, -1.1) {%
-  \textcolor{placeacc}{\rule{0.6em}{0.6em}}~{\small place}\quad
-  \textcolor{attackacc}{\rule{0.6em}{0.6em}}~{\small attack}\quad
-  \textcolor{fortifyacc}{\rule{0.6em}{0.6em}}~{\small fortify}
-};
- 
-\end{tikzpicture}
-}% end scalebox
-\end{center}
-\vfill
-\end{frame}
 	% =============================================================================
 	\section{Primi Risultati}
-	
+
 	\begin{frame}{\centering Primi Risultati , Setup Sperimentale}
-		
+
 		\begin{center}
 			\small
 			1000 partite a 4 giocatori $\cdot$ mappa standard Risk $\cdot$
 			100 turni massimi $\cdot$ seed fisso per riproducibilità
-		\end{center} 
+		\end{center}
 
 		\vspace{0.2cm}
-		
+
 		\begin{adjustbox}{width=\textwidth}
 			\small
 			\renewcommand{\arraystretch}{1.25}
@@ -929,34 +890,32 @@
 				\textbf{Bot} & \textbf{Win\%} & \textbf{Avg Rank} & \textbf{Avg Territories}
 				& \textbf{Avg Armies} & \textbf{Survived\%}\\
 				\midrule
-				Angry  (Aggressivo)  & 9.03\% & 3.39 & 7.22 & 11.61 & 13.22\%  \\
-				Stinky (Opportunista)  & 28.42\% & 2.44 & 12.6 & 63.97 & 41.19\% \\
-				Communist (Egualitario)& 8.79\% & 3.04 & 3.77 & 154.41 & 18.57\%  \\
-				Cluster (Confine) & 19.83\% & 2.42 & 7.27 & 313.81 & 36.7\% \\
-				Pixie (Continentale)    & 11.07\% & 2.23 & 5.3 & 242.36 & 39.34\% \\
-				\textbf{RLGA} (Evolutivo) & \textbf{54.5\%} & \textbf{1.86} & \textbf{22.64} & \textbf{269.14}
-				& \textbf{69.3\%}\\
+				Angry  (Aggressivo)   & 9.03\%  & 3.39 & 7.22  & 11.61  & 13.22\% \\
+				Stinky (Opportunista) & 28.42\% & 2.44 & 12.6  & 63.97  & 41.19\% \\
+				Communist (Egualitario)& 8.79\% & 3.04 & 3.77  & 154.41 & 18.57\% \\
+				Cluster (Confine)     & 19.83\% & 2.42 & 7.27  & 313.81 & 36.7\%  \\
+				Pixie (Continentale)  & 11.07\% & 2.23 & 5.3   & 242.36 & 39.34\% \\
+				\textbf{RLGA} (Evolutivo) & \textbf{54.5\%} & \textbf{1.86} & \textbf{22.64} & \textbf{269.14} & \textbf{69.3\%}\\
 				\bottomrule
 			\end{tabular}
 		\end{adjustbox}
-		
+
 		\begin{flushleft}
 			\tiny Tabella contenente nome bot, percentuale winrate, media posizione in classifica,
-			media territori posseduti a fine partita, media armate a fine partita
+			media territori posseduti a fine partita, media armate a fine partita,
 			percentuale di sopravvivenza nelle 1000 partite.
 		\end{flushleft}
-		
+
 		\vspace{0.2cm}
 		\begin{itemize}
 			\item<1-> \textbf{Baseline}: i bot hand-coded forniscono un punto di
 			riferimento stabile e riproducibile.
-			\item<2-> \textbf{RLGA vs. baseline}: si valuta se l'evoluzione converge
+			\item<2-> \textbf{RLGA vs.\ baseline}: si valuta se l'evoluzione converge
 			verso strategie dominanti in un numero ragionevole di generazioni.
 		\end{itemize}
 	\end{frame}
-	
+
 	\begin{frame}{\centering Primi Risultati , Osservazioni Qualitative}
-		
 		\begin{columns}[T]
 			\begin{column}{0.48\textwidth}
 				\begin{block}{Comportamenti emergenti}
@@ -996,12 +955,11 @@
 			\end{column}
 		\end{columns}
 	\end{frame}
-	
+
 	% =============================================================================
 	\section{Conclusioni}
-	
+
 	\begin{frame}{\centering Conclusioni}
-		
 		\onslide<1->{
 			\begin{block}{Framework modulare}
 				Un motore di simulazione Risk completo in Python, con
@@ -1036,7 +994,7 @@
 			\end{alertblock}
 		}
 	\end{frame}
-	
+
 	\section{Grazie per l'attenzione}
-	
+
 \end{document}
