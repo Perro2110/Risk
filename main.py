@@ -31,7 +31,7 @@ if __name__ == '__main__':
     opponent3 = bot_cls2(bot_cls3.__name__.lower())
 
     game_map = Map.from_csv('data/base_map.csv')
-    game = Game(game_map, 100, False)
+    game = Game(game_map, 100, True)
     game.add_player(agent)
     game.add_player(opponent)
     game.add_player(opponent2)
